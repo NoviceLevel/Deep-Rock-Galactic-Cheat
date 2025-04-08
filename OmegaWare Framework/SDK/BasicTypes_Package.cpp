@@ -36,7 +36,7 @@ namespace CG
 	 */
 	bool InitSdk()
 	{
-		return InitSdk(L"FSD-Win64-Shipping.exe", 0x62F5C10, 0x62B9640, 0x643C230);
+		return InitSdk(L"FSD-Win64-Shipping.exe", 0x06354A50, 0x06318480, 0x064A3460);
 	}
 
 	// --------------------------------------------------
