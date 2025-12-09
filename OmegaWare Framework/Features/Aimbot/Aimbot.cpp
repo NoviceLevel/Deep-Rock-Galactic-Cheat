@@ -87,50 +87,50 @@ void Aimbot::Render()
 
 	Unreal* pUnreal = Cheat::unreal.get();
 
-	CG::APlayerCameraManager* pCameraManager = pUnreal->GetPlayerCameraManager();
+	SDK::APlayerCameraManager* pCameraManager = pUnreal->GetPlayerCameraManager();
 	if (!pCameraManager)
 		return;
 
-	CG::ABP_PlayerCharacter_C* pDRGPlayer = static_cast<CG::ABP_PlayerCharacter_C*>(pUnreal->GetAcknowledgedPawn());
+	SDK::ABP_PlayerCharacter_C* pDRGPlayer = static_cast<SDK::ABP_PlayerCharacter_C*>(pUnreal->GetAcknowledgedPawn());
 	if (!IsValidObjectPtr(pDRGPlayer))
 		return;
 
-	CG::UInventoryComponent* pInventoryComponenet = pDRGPlayer->InventoryComponent;
+	SDK::UInventoryComponent* pInventoryComponenet = pDRGPlayer->InventoryComponent;
 	if (!IsValidObjectPtr(pInventoryComponenet))
 		return;
 
-	CG::AItem* pItem = pInventoryComponenet->GetEquippedItem();
+	SDK::AItem* pItem = pInventoryComponenet->GetEquippedItem();
 	if (!IsValidObjectPtr(pItem))
 		return;
 
-	CG::AAmmoDrivenWeapon* pWeapon = static_cast<CG::AAmmoDrivenWeapon*>(pItem);
-	if (!IsValidObjectPtr(pWeapon) || !pItem->IsA(CG::AAmmoDrivenWeapon::StaticClass()))
+	SDK::AAmmoDrivenWeapon* pWeapon = static_cast<SDK::AAmmoDrivenWeapon*>(pItem);
+	if (!IsValidObjectPtr(pWeapon) || !pItem->IsA(SDK::AAmmoDrivenWeapon::StaticClass()))
 		return;
 
-	CG::UWeaponFireComponent* pWeaponFire = pWeapon->WeaponFire;
+	SDK::UWeaponFireComponent* pWeaponFire = pWeapon->WeaponFire;
 	if (!IsValidObjectPtr(pWeaponFire))
 		return;
 	
-	CG::FVector vecCameraLocation = pCameraManager->GetCameraLocation();
+	SDK::FVector vecCameraLocation = pCameraManager->GetCameraLocation();
 
 	if (!bAutoFire && !keyAimbot.IsDown() && !keyAimbot.IsToggled())
 		return;
 
 	Mutex.lock();
-	for (CG::AEnemyPawn* pActor : apEnemyPawns) {
+	for (SDK::AEnemyPawn* pActor : apEnemyPawns) {
 		if (!IsValidObjectPtr(pActor) || pActor->InternalIndex <= 0 || pActor->Name.ComparisonIndex <= 0)
 			continue;
 
-		CG::UEnemyHealthComponent* pHealthComponent = pActor->Health;
+		SDK::UEnemyHealthComponent* pHealthComponent = pActor->Health;
 		if (!IsValidObjectPtr(pHealthComponent) || pHealthComponent->InternalIndex <= 0 || pHealthComponent->Name.ComparisonIndex == 0 || pHealthComponent->IsDead() || !pHealthComponent->canTakeDamage)
 			continue;
 
-		CG::FVector vecAimLocation, vecExtent;
+		SDK::FVector vecAimLocation, vecExtent;
 		pActor->GetActorBounds(true, &vecAimLocation, &vecExtent, false);
 
 		pWeaponFire->Fire(
 			bMagicBullet ? vecAimLocation : vecCameraLocation,
-			CG::FVector_NetQuantizeNormal((vecAimLocation - vecCameraLocation).Unit()),
+			SDK::FVector_NetQuantizeNormal((vecAimLocation - vecCameraLocation).Unit()),
 			true);
 
 		if (!bMultiTarget) {
@@ -139,22 +139,22 @@ void Aimbot::Render()
 		}
 	}
 
-	for (CG::AEnemyDeepPathfinderCharacter* pActor : apEnemyPathFinders) {
+	for (SDK::AEnemyDeepPathfinderCharacter* pActor : apEnemyPathFinders) {
 		if (!IsValidObjectPtr(pActor) || pActor->InternalIndex <= 0 || pActor->Name.ComparisonIndex <= 0)
 			continue;
 
-		CG::UEnemyHealthComponent* pHealthComponent = pActor->HealthComponent;
+		SDK::UEnemyHealthComponent* pHealthComponent = pActor->HealthComponent;
 		if (!IsValidObjectPtr(pHealthComponent) || pHealthComponent->InternalIndex <= 0 || pHealthComponent->Name.ComparisonIndex == 0 || pHealthComponent->IsDead())
 			continue;
 
-		CG::USkeletalMeshComponent* pMesh = pActor->Mesh;
+		SDK::USkeletalMeshComponent* pMesh = pActor->Mesh;
 		if (!IsValidObjectPtr(pMesh))
 			continue;
 
-		CG::FVector vecHeadLocation = pMesh->GetSocketLocation(pMesh->GetBoneName(13));
+		SDK::FVector vecHeadLocation = pMesh->GetSocketLocation(pMesh->GetBoneName(13));
 		pWeaponFire->Fire(
 			bMagicBullet ? vecHeadLocation : vecCameraLocation,
-			CG::FVector_NetQuantizeNormal((vecHeadLocation - vecCameraLocation).Unit()),
+			SDK::FVector_NetQuantizeNormal((vecHeadLocation - vecCameraLocation).Unit()),
 			true);
 
 		if (!bMultiTarget) {
@@ -176,83 +176,83 @@ void Aimbot::Run()
 
 	Unreal* pUnreal = Cheat::unreal.get();
 	
-	CG::APlayerController* pPlayerController = pUnreal->GetPlayerController();
-	CG::APlayerCameraManager* pCameraManager = pUnreal->GetPlayerCameraManager();
+	SDK::APlayerController* pPlayerController = pUnreal->GetPlayerController();
+	SDK::APlayerCameraManager* pCameraManager = pUnreal->GetPlayerCameraManager();
 	if (!pPlayerController || !pCameraManager)
 		return;
 
-	CG::ABP_PlayerCharacter_C* pDRGPlayer = static_cast<CG::ABP_PlayerCharacter_C*>(pUnreal->GetAcknowledgedPawn());
+	SDK::ABP_PlayerCharacter_C* pDRGPlayer = static_cast<SDK::ABP_PlayerCharacter_C*>(pUnreal->GetAcknowledgedPawn());
 	if (!IsValidObjectPtr(pDRGPlayer))
 		return;
 
-	CG::UInventoryComponent* pInventoryComponenet = pDRGPlayer->InventoryComponent;
+	SDK::UInventoryComponent* pInventoryComponenet = pDRGPlayer->InventoryComponent;
 	if (!IsValidObjectPtr(pInventoryComponenet))
 		return;
 
-	CG::AItem* pItem = pInventoryComponenet->GetEquippedItem();
+	SDK::AItem* pItem = pInventoryComponenet->GetEquippedItem();
 	if (!IsValidObjectPtr(pItem))
 		return;
 	
-	CG::UItemID* pItemID = pItem->ItemID;
-	if (!IsValidObjectPtr(pItemID) || pItemID->ItemCategory > CG::EItemCategory::SecondaryWeapon)
+	SDK::UItemID* pItemID = pItem->ItemID;
+	if (!IsValidObjectPtr(pItemID) || pItemID->ItemCategory > SDK::EItemCategory::SecondaryWeapon)
 		return;
 
 
-	CG::AAmmoDrivenWeapon* pWeapon = static_cast<CG::AAmmoDrivenWeapon*>(pItem);
-	if (!IsValidObjectPtr(pWeapon) || !pItem->IsA(CG::AAmmoDrivenWeapon::StaticClass()))
+	SDK::AAmmoDrivenWeapon* pWeapon = static_cast<SDK::AAmmoDrivenWeapon*>(pItem);
+	if (!IsValidObjectPtr(pWeapon) || !pItem->IsA(SDK::AAmmoDrivenWeapon::StaticClass()))
 		return;
 
-	CG::UWeaponFireComponent* pWeaponFire = pWeapon->WeaponFire;
+	SDK::UWeaponFireComponent* pWeaponFire = pWeapon->WeaponFire;
 	if (!IsValidObjectPtr(pWeaponFire))
 		return;
 
-	CG::UKismetMathLibrary* pMathLibrary = Cheat::unreal->GetMathLibrary();
-	CG::UKismetSystemLibrary* pSystemLibrary = Cheat::unreal->GetSystemLibrary();
-	CG::FVector vecCameraLocation = pCameraManager->GetCameraLocation();
-	CG::FRotator rotCameraRotation = pPlayerController->GetControlRotation();
+	SDK::UKismetMathLibrary* pMathLibrary = Cheat::unreal->GetMathLibrary();
+	SDK::UKismetSystemLibrary* pSystemLibrary = Cheat::unreal->GetSystemLibrary();
+	SDK::FVector vecCameraLocation = pCameraManager->GetCameraLocation();
+	SDK::FRotator rotCameraRotation = pPlayerController->GetControlRotation();
 	float flAimFOV_copy = flAimFOV;
 	bool bMagicBullet_copy = bMagicBullet;
 
-	std::vector<CG::AEnemyPawn*> apUnsortedEnemyPawns = pUnreal->GetActors<CG::AEnemyPawn>();
-	std::vector<CG::AEnemyDeepPathfinderCharacter*> apUnsortedEnemyPathFinders = pUnreal->GetActors<CG::AEnemyDeepPathfinderCharacter>();
+	std::vector<SDK::AEnemyPawn*> apUnsortedEnemyPawns = pUnreal->GetActors<SDK::AEnemyPawn>();
+	std::vector<SDK::AEnemyDeepPathfinderCharacter*> apUnsortedEnemyPathFinders = pUnreal->GetActors<SDK::AEnemyDeepPathfinderCharacter>();
 
 	Mutex.lock();
-	apEnemyPawns = pUnreal->SortActorsByDistance<CG::AEnemyPawn*>(apUnsortedEnemyPawns);
-	apEnemyPawns.erase(std::remove_if(apEnemyPawns.begin(), apEnemyPawns.end(), [pMathLibrary, pSystemLibrary, vecCameraLocation, rotCameraRotation, flAimFOV_copy, bMagicBullet_copy](CG::AEnemyPawn* pActor)
+	apEnemyPawns = pUnreal->SortActorsByDistance<SDK::AEnemyPawn*>(apUnsortedEnemyPawns);
+	apEnemyPawns.erase(std::remove_if(apEnemyPawns.begin(), apEnemyPawns.end(), [pMathLibrary, pSystemLibrary, vecCameraLocation, rotCameraRotation, flAimFOV_copy, bMagicBullet_copy](SDK::AEnemyPawn* pActor)
 		{
 			if (!IsValidObjectPtr(pActor) || pActor->InternalIndex <= 0 || pActor->Name.ComparisonIndex <= 0)
 				return true;
 
-			CG::UEnemyHealthComponent* pHealthComponent = pActor->Health;
+			SDK::UEnemyHealthComponent* pHealthComponent = pActor->Health;
 			if (!IsValidObjectPtr(pHealthComponent) || pHealthComponent->InternalIndex <= 0 || pHealthComponent->Name.ComparisonIndex == 0 || pHealthComponent->IsDead() || !pHealthComponent->canTakeDamage)
 				return true;
 
-			if (pActor->GetAttitude() != CG::EPawnAttitude::Hostile)
+			if (pActor->GetAttitude() != SDK::EPawnAttitude::Hostile)
 				return true;
 
-			CG::FVector vecAimLocation, vecExtent;
+			SDK::FVector vecAimLocation, vecExtent;
 			pActor->GetActorBounds(true, &vecAimLocation, &vecExtent, false);
 
-			CG::FRotator rotGoalRotation = pMathLibrary->FindLookAtRotation(vecCameraLocation, vecAimLocation);
+			SDK::FRotator rotGoalRotation = pMathLibrary->FindLookAtRotation(vecCameraLocation, vecAimLocation);
 			if (flAimFOV_copy <= (rotGoalRotation - rotCameraRotation).Clamp().Size())
 				return true;
 
 			if (!bMagicBullet_copy) {
-				CG::FHitResult hrResult{};
+				SDK::FHitResult hrResult{};
 				if (pSystemLibrary->LineTraceSingle(
-					(*CG::UWorld::GWorld),
+					SDK::UWorld::GWorld,
 					vecCameraLocation,
 					vecAimLocation,
-					CG::ETraceTypeQuery::TraceTypeQuery1,
+					SDK::ETraceTypeQuery::TraceTypeQuery1,
 					true, {},
-					CG::EDrawDebugTrace::ForDuration,
+					SDK::EDrawDebugTrace::ForDuration,
 					&hrResult, true,
 					{ 1.f, 1.f, 1.f, 1.f },
 					{ 1.f, 0.f, 0.f, 1.f },
 					300.f
 				)) {
 					// Vischeck, will be a valid object ptr if we hit a wall :|
-					CG::AActor* pHitActor = hrResult.Actor.Get();
+					SDK::AActor* pHitActor = hrResult.Actor.Get();
 					if (IsValidObjectPtr(pHitActor))
 						return true;
 				}
@@ -262,39 +262,39 @@ void Aimbot::Run()
 		}), apEnemyPawns.end());
 
 
-	apEnemyPathFinders = pUnreal->SortActorsByDistance<CG::AEnemyDeepPathfinderCharacter*>(apUnsortedEnemyPathFinders);
-	apEnemyPathFinders.erase(std::remove_if(apEnemyPathFinders.begin(), apEnemyPathFinders.end(), [pMathLibrary, pSystemLibrary, vecCameraLocation, rotCameraRotation, flAimFOV_copy, bMagicBullet_copy](CG::AEnemyDeepPathfinderCharacter* pActor)
+	apEnemyPathFinders = pUnreal->SortActorsByDistance<SDK::AEnemyDeepPathfinderCharacter*>(apUnsortedEnemyPathFinders);
+	apEnemyPathFinders.erase(std::remove_if(apEnemyPathFinders.begin(), apEnemyPathFinders.end(), [pMathLibrary, pSystemLibrary, vecCameraLocation, rotCameraRotation, flAimFOV_copy, bMagicBullet_copy](SDK::AEnemyDeepPathfinderCharacter* pActor)
 		{
 			if (!IsValidObjectPtr(pActor) || pActor->InternalIndex <= 0 || pActor->Name.ComparisonIndex <= 0)
 				return true;
 
-			CG::UEnemyHealthComponent* pHealthComponent = pActor->HealthComponent;
+			SDK::UEnemyHealthComponent* pHealthComponent = pActor->HealthComponent;
 			if (!IsValidObjectPtr(pHealthComponent) || pHealthComponent->InternalIndex <= 0 || pHealthComponent->Name.ComparisonIndex == 0 || pHealthComponent->IsDead() || !pHealthComponent->canTakeDamage)
 				return true;
 
-			if (pActor->GetAttitude() != CG::EPawnAttitude::Hostile)// && FNames::GetLookupIndex(pActor->Name.ComparisonIndex) != FNames::ENE_Flea_C)
+			if (pActor->GetAttitude() != SDK::EPawnAttitude::Hostile)// && FNames::GetLookupIndex(pActor->Name.ComparisonIndex) != FNames::ENE_Flea_C)
 				return true;
 
-			CG::USkeletalMeshComponent* pMesh = pActor->Mesh;
+			SDK::USkeletalMeshComponent* pMesh = pActor->Mesh;
 			if (!IsValidObjectPtr(pMesh)) {
 				return true;
 			}
 
-			CG::FVector vecHeadLocation = pMesh->GetSocketLocation(pMesh->GetBoneName(13));
+			SDK::FVector vecHeadLocation = pMesh->GetSocketLocation(pMesh->GetBoneName(13));
 
-			CG::FRotator rotGoalRotation = pMathLibrary->FindLookAtRotation(vecCameraLocation, vecHeadLocation);
+			SDK::FRotator rotGoalRotation = pMathLibrary->FindLookAtRotation(vecCameraLocation, vecHeadLocation);
 			if (flAimFOV_copy <= (rotGoalRotation - rotCameraRotation).Clamp().Size())
 				return true;
 
 			if (!bMagicBullet_copy) {
-				CG::FHitResult hrResult{};
+				SDK::FHitResult hrResult{};
 				if (pSystemLibrary->LineTraceSingle(
-					(*CG::UWorld::GWorld),
+					SDK::UWorld::GWorld,
 					vecCameraLocation,
 					vecHeadLocation,
-					CG::ETraceTypeQuery::TraceTypeQuery1,
+					SDK::ETraceTypeQuery::TraceTypeQuery1,
 					true, {},
-					CG::EDrawDebugTrace::ForDuration,
+					SDK::EDrawDebugTrace::ForDuration,
 					&hrResult, true,
 					{ 1.f, 1.f, 1.f, 1.f },
 					{ 1.f, 0.f, 0.f, 1.f },

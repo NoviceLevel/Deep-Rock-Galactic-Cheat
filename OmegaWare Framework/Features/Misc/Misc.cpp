@@ -26,7 +26,7 @@ void Misc::Destroy() {
 
 	Unreal* pUnreal = Cheat::unreal.get();
 
-	CG::UGameViewportClient* pViewportClient = pUnreal->GetViewportClient();
+	SDK::UGameViewportClient* pViewportClient = pUnreal->GetViewportClient();
 	if (!pViewportClient)
 		return;
 
@@ -43,23 +43,23 @@ void Misc::PopulateMenu()
 	Child* Misc = new Child("Fullbright", []() { return ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y / 2); }, ImGuiChildFlags_Border);
 	Misc->AddElement(new Checkbox(Cheat::localization->Get("FULLBRIGHT"), &bFullbright));
 	Misc->AddElement(new Button("Get Ore Veins", []() {
-		std::vector<CG::ADeepCSGWorld*> TerrainObjects = Cheat::unreal->GetActors<CG::ADeepCSGWorld>();
-		for (CG::ADeepCSGWorld* pTerrain : TerrainObjects)
+		std::vector<SDK::ADeepCSGWorld*> TerrainObjects = Cheat::unreal->GetActors<SDK::ADeepCSGWorld>();
+		for (SDK::ADeepCSGWorld* pTerrain : TerrainObjects)
 		{
 			if (!IsValidObjectPtr(pTerrain))
 				continue;
 
-			CG::UTerrainMaterialsCollection* pTerrainMaterials = pTerrain->TerrainMaterials;
+			SDK::UTerrainMaterialsCollection* pTerrainMaterials = pTerrain->TerrainMaterials;
 			if (!IsValidObjectPtr(pTerrainMaterials))
 				continue;
 
 			for (int i = 0; i < pTerrainMaterials->Materials.Count(); i++)
 			{
-				CG::UTerrainMaterial* pTerrainMaterial = pTerrainMaterials->Materials[i];
+				SDK::UTerrainMaterial* pTerrainMaterial = pTerrainMaterials->Materials[i];
 				if (!IsValidObjectPtr(pTerrainMaterial))
 					continue;
 
-				CG::UResourceData* pResourceData = pTerrainMaterial->ResourceData;
+				SDK::UResourceData* pResourceData = pTerrainMaterial->ResourceData;
 				if (!IsValidObjectPtr(pResourceData))
 					continue;
 
@@ -87,7 +87,7 @@ void Misc::Run() {
 
 	Unreal* pUnreal = Cheat::unreal.get();
 
-	CG::UGameViewportClient* pViewportClient = pUnreal->GetViewportClient();
+	SDK::UGameViewportClient* pViewportClient = pUnreal->GetViewportClient();
 	if (!pViewportClient)
 		return;
 

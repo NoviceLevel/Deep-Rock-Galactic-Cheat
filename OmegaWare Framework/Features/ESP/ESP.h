@@ -78,10 +78,10 @@ private:
 	float clrDebug[4] = { 1.f, 1.f, 0.4f, 1.f };
 
 	bool bShowPlayerList = false;
-	std::vector<CG::AActor*> vecPlayers;
-	CG::ABP_PlayerCharacter_C* pSelectedPlayer = nullptr;
+	std::vector<SDK::AActor*> vecPlayers;
+	SDK::ABP_PlayerCharacter_C* pSelectedPlayer = nullptr;
 	
-	bool GetBoxFromBBox(CG::FVector& vecLocation, CG::FVector& vecExtent, ImRect& rectOut, bool bAccurate);
+	bool GetBoxFromBBox(SDK::FVector& vecLocation, SDK::FVector& vecExtent, ImRect& rectOut, bool bAccurate);
 
 public:
 	ESP();

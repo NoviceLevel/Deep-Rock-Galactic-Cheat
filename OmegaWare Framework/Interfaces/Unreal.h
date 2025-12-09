@@ -16,7 +16,7 @@ namespace FNames
 	};
 
 	typedef struct ActorInfo_t {
-		CG::AActor* pActor;
+		SDK::AActor* pActor;
 		EFNames iLookupIndex;
 		float flDistance;
 	} PawnInfo_t;
@@ -42,20 +42,20 @@ namespace FNames
 
 	inline void Initialize()
 	{
-		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "GNames: 0x" << CG::FName::GNames).str());
-		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "GNames Count: " << CG::FName::GNames->Count()).str());
+		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "GNames: 0x" << SDK::FName::GNames).str());
+		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "GNames Count: " << SDK::FName::GNames->Count()).str());
 		
 		size_t iGNameSize = 0;
 		int lastBlock = 0;
-		uintptr_t nextFNameAddress = reinterpret_cast<uintptr_t>(CG::FName::GNames->Allocator.Blocks[0]);
+		uintptr_t nextFNameAddress = reinterpret_cast<uintptr_t>(SDK::FName::GNames->Allocator.Blocks[0]);
 
 		while (1) {
 
 		RePlay:
-			int32_t nextFNameComparisonId = MAKELONG((uint16_t)((nextFNameAddress - reinterpret_cast<uintptr_t>(CG::FName::GNames->Allocator.Blocks[lastBlock])) / 2), (uint16_t)lastBlock);
+			int32_t nextFNameComparisonId = MAKELONG((uint16_t)((nextFNameAddress - reinterpret_cast<uintptr_t>(SDK::FName::GNames->Allocator.Blocks[lastBlock])) / 2), (uint16_t)lastBlock);
 			int32_t block = nextFNameComparisonId >> 16;
 			int32_t offset = (uint16_t)nextFNameComparisonId;
-			int32_t offsetFromBlock = static_cast<int32_t>(nextFNameAddress - reinterpret_cast<uintptr_t>(CG::FName::GNames->Allocator.Blocks[lastBlock]));
+			int32_t offsetFromBlock = static_cast<int32_t>(nextFNameAddress - reinterpret_cast<uintptr_t>(SDK::FName::GNames->Allocator.Blocks[lastBlock]));
 
 			// Get entry information
 			const uintptr_t entryOffset = nextFNameAddress;
@@ -77,13 +77,13 @@ namespace FNames
 				nameLength += 1;
 
 			// Block end ?
-			if (offsetFromBlock + toAdd + (nameLength * 2) >= 0xFFFF * CG::FNameEntryAllocator::Stride || nameHeader == 0x00 || block == CG::FName::GNames->Allocator.CurrentBlock && offset >= CG::FName::GNames->Allocator.CurrentByteCursor)
+			if (offsetFromBlock + toAdd + (nameLength * 2) >= 0xFFFF * SDK::FNameEntryAllocator::Stride || nameHeader == 0x00 || block == SDK::FName::GNames->Allocator.CurrentBlock && offset >= SDK::FName::GNames->Allocator.CurrentByteCursor)
 			{
-				nextFNameAddress = reinterpret_cast<uintptr_t>(CG::FName::GNames->Allocator.Blocks[++lastBlock]);
+				nextFNameAddress = reinterpret_cast<uintptr_t>(SDK::FName::GNames->Allocator.Blocks[++lastBlock]);
 				goto RePlay;
 			}
 
-			std::string sName = std::string(reinterpret_cast<CG::FNameEntry*>(entryOffset)->AnsiName, nameHeader >> 6);
+			std::string sName = std::string(reinterpret_cast<SDK::FNameEntry*>(entryOffset)->AnsiName, nameHeader >> 6);
 
 			for (int i = 0; i < vecClassLookups.size(); i++) {
 				if (vecClassLookups[i].ComparisonIndex)
@@ -98,7 +98,7 @@ namespace FNames
 			}
 
 			// We hit last Name in last Block
-			if (lastBlock > CG::FName::GNames->Allocator.CurrentBlock)
+			if (lastBlock > SDK::FName::GNames->Allocator.CurrentBlock)
 				break;
 
 			// Get next name address
@@ -117,10 +117,10 @@ namespace FNames
 #undef CREATE_ENUM
 #undef CREATE_CLASS_LOOKUP
 
-static CG::UFont* pFont;
+static SDK::UFont* pFont;
 static DWORD dwOldProtect;
 
-typedef void(__thiscall* PostRender) (CG::UObject* pViewportClient, CG::UCanvas* pCanvas);
+typedef void(__thiscall* PostRender) (SDK::UObject* pViewportClient, SDK::UCanvas* pCanvas);
 static PostRender oPostRender;
 
 class Unreal
@@ -128,11 +128,11 @@ class Unreal
 public:
 	static void HookPostRender()
 	{
-		pFont = CG::UObject::FindObject<CG::UFont>("Font Roboto.Roboto");
+		pFont = SDK::UObject::FindObject<SDK::UFont>("Font Roboto.Roboto");
 		if (!IsValidObjectPtr(pFont))
 			return;
 
-		CG::UGameViewportClient* pViewportClient = GetViewportClient();
+		SDK::UGameViewportClient* pViewportClient = GetViewportClient();
 		if (!IsValidObjectPtr(pViewportClient))
 			return;
 
@@ -145,7 +145,7 @@ public:
 
 	static void RestorePostRender()
 	{
-		CG::UGameViewportClient* pViewportClient = GetViewportClient();
+		SDK::UGameViewportClient* pViewportClient = GetViewportClient();
 		if (!IsValidObjectPtr(pViewportClient))
 			return;
 
@@ -155,21 +155,21 @@ public:
 		VirtualProtect(&VFTable[POST_RENDER_INDEX], 8, dwOldProtect, &dwOldProtect);
 	}
 
-	std::vector<CG::AActor*> Actors;
+	std::vector<SDK::AActor*> Actors;
 	std::vector<FNames::ActorInfo_t> ActorList;
 	std::mutex ActorLock;
 
 	// Shortcut functions to get pointers to important classes used for many things
-	static CG::UKismetMathLibrary* GetMathLibrary() { return reinterpret_cast<CG::UKismetMathLibrary*>(CG::UKismetMathLibrary::StaticClass()); }
-	static CG::UKismetSystemLibrary* GetSystemLibrary() { return reinterpret_cast<CG::UKismetSystemLibrary*>(CG::UKismetSystemLibrary::StaticClass()); }
-	static CG::UGameplayStatics* GetGameplayStatics() { return reinterpret_cast<CG::UGameplayStatics*>(CG::UGameplayStatics::StaticClass()); }
-	static CG::UKismetStringLibrary* GetStringLibrary() { return reinterpret_cast<CG::UKismetStringLibrary*>(CG::UKismetStringLibrary::StaticClass()); }
+	static SDK::UKismetMathLibrary* GetMathLibrary() { return reinterpret_cast<SDK::UKismetMathLibrary*>(SDK::UKismetMathLibrary::StaticClass()); }
+	static SDK::UKismetSystemLibrary* GetSystemLibrary() { return reinterpret_cast<SDK::UKismetSystemLibrary*>(SDK::UKismetSystemLibrary::StaticClass()); }
+	static SDK::UGameplayStatics* GetGameplayStatics() { return reinterpret_cast<SDK::UGameplayStatics*>(SDK::UGameplayStatics::StaticClass()); }
+	static SDK::UKismetStringLibrary* GetStringLibrary() { return reinterpret_cast<SDK::UKismetStringLibrary*>(SDK::UKismetStringLibrary::StaticClass()); }
 
 	// LIFEHAAACK BITCH (◣_◢)
-	inline bool IsAFast(CG::UClass* in, FNames::EFNames iLookupIndex)
+	inline bool IsAFast(SDK::UClass* in, FNames::EFNames iLookupIndex)
 	{
 		int32_t iComparisonIndex = FNames::vecClassLookups[iLookupIndex].ComparisonIndex;
-		for (CG::UStruct* pStruct = static_cast<CG::UStruct*>(in); IsValidObjectPtr(pStruct); pStruct = pStruct->SuperField) {
+		for (SDK::UStruct* pStruct = static_cast<SDK::UStruct*>(in); IsValidObjectPtr(pStruct); pStruct = pStruct->SuperField) {
 			if (pStruct->Name.ComparisonIndex == iComparisonIndex)
 				return true;
 		}
@@ -178,9 +178,9 @@ public:
 	};
 
 	// Kinda like UObject->IsA, but safer and faster as we are already storing fname comparison indexes!!!
-	inline bool IsAFast(CG::UClass* in, int iComparisonIndex)
+	inline bool IsAFast(SDK::UClass* in, int iComparisonIndex)
 	{
-		for (CG::UStruct* pStruct = static_cast<CG::UStruct*>(in); IsValidObjectPtr(pStruct); pStruct = pStruct->SuperField) {
+		for (SDK::UStruct* pStruct = static_cast<SDK::UStruct*>(in); IsValidObjectPtr(pStruct); pStruct = pStruct->SuperField) {
 			if (pStruct->Name.ComparisonIndex == iComparisonIndex)
 				return true;
 		}
@@ -190,13 +190,13 @@ public:
 
 	inline void RefreshActorList() // A function to refresh the actor list
 	{
-		std::vector<CG::AActor*> lActors{};
+		std::vector<SDK::AActor*> lActors{};
 		std::vector<FNames::ActorInfo_t> lActorList{};
 		std::vector<float> AllDistances{};
 
 		static std::unordered_map<uint32_t, FNames::EFNames> umClassLookupCache{};
 
-		if (CG::UWorld::GWorld == nullptr) {
+		if (SDK::UWorld::GWorld == nullptr) {
 			ActorLock.lock();
 			umClassLookupCache.clear(); // This is probably not needed due to fname comparison indexes not changing
 			Actors.clear();
@@ -205,7 +205,7 @@ public:
 			return;
 		}
 
-		CG::AFSDGameState* pGameState = reinterpret_cast<CG::AFSDGameState*>(GetGameStateBase());
+		SDK::AFSDGameState* pGameState = reinterpret_cast<SDK::AFSDGameState*>(GetGameStateBase());
 		if (!IsValidObjectPtr(pGameState) || pGameState->IsOnSpaceRig) {
 			ActorLock.lock();
 			umClassLookupCache.clear(); // This is probably not needed due to fname comparison indexes not changing
@@ -225,7 +225,7 @@ public:
 			return;
 		}
 		
-		CG::APawn* pAcknowledgedPawn = GetAcknowledgedPawn();
+		SDK::APawn* pAcknowledgedPawn = GetAcknowledgedPawn();
 		if (!pAcknowledgedPawn) {
 			ActorLock.lock();
 			Actors.clear();
@@ -235,11 +235,11 @@ public:
 		}
 
 
-		CG::FVector vecLocation = pAcknowledgedPawn->K2_GetActorLocation();
+		SDK::FVector vecLocation = pAcknowledgedPawn->K2_GetActorLocation();
 
-		for (int i = 0; i < (**CG::UWorld::GWorld).Levels.Count(); i++)
+		for (int i = 0; i < SDK::UWorld::GWorld->Levels.Count(); i++)
 		{
-			CG::ULevel* Level = (**CG::UWorld::GWorld).Levels[i];
+			SDK::ULevel* Level = SDK::UWorld::GWorld->Levels[i];
 
 			if (!Level)
 				continue;
@@ -249,12 +249,12 @@ public:
 
 			for (int j = 0; j < Level->NearActors.Count(); j++)
 			{
-				CG::AActor* Actor = Level->NearActors[j];
+				SDK::AActor* Actor = Level->NearActors[j];
 				if (!Actor)
 					continue;
 
 				bool bFailed = false;
-				for (CG::AActor* pOtherActor : lActors) {
+				for (SDK::AActor* pOtherActor : lActors) {
 					if (pOtherActor != Actor)
 						continue;
 
@@ -267,7 +267,7 @@ public:
 			}
 		}
 
-		for (CG::AActor* pActor : lActors)
+		for (SDK::AActor* pActor : lActors)
 		{
 			if (!IsValidObjectPtr(pActor))
 				continue;
@@ -284,7 +284,7 @@ public:
 				stActorInfo.iLookupIndex = itr->second;
 			}
 			else {
-				for (CG::UStruct* pStruct = static_cast<CG::UStruct*>(pActor->Class); IsValidObjectPtr(pStruct); pStruct = pStruct->SuperField) {
+				for (SDK::UStruct* pStruct = static_cast<SDK::UStruct*>(pActor->Class); IsValidObjectPtr(pStruct); pStruct = pStruct->SuperField) {
 					for (FNames::ClassLookupEntry_t stEntry : FNames::vecClassLookups) {
 						if (pStruct->Name.ComparisonIndex == stEntry.ComparisonIndex) {
 							stActorInfo.iLookupIndex = stEntry.iLookupIndex;
@@ -329,7 +329,7 @@ public:
 		ActorLock.lock();
 
 		Actors.clear();
-		for (CG::AActor* v : lActors)
+		for (SDK::AActor* v : lActors)
 			Actors.push_back(v);
 
 		ActorList.clear();
@@ -344,12 +344,12 @@ public:
 	{
 		std::vector<T*> actors;
 
-		CG::AGameStateBase* pGameState = GetGameStateBase();
-		CG::UClass* pComparisonClass = T::StaticClass();
+		SDK::AGameStateBase* pGameState = GetGameStateBase();
+		SDK::UClass* pComparisonClass = T::StaticClass();
 		if (!IsValidObjectPtr(pComparisonClass) || !pGameState || pGameState->ReplicatedWorldTimeSeconds <= 5.f)
 			return actors;
 
-		for (CG::AActor* pActor : Actors)
+		for (SDK::AActor* pActor : Actors)
 		{
 			if (!IsValidObjectPtr(reinterpret_cast<T*>(pActor)))
 				continue;
@@ -362,94 +362,94 @@ public:
 	}
 
 	// These functions are to make getting pointers to important classes and objects easier and cleaner
-	static CG::AGameStateBase* GetGameStateBase()
+	static SDK::AGameStateBase* GetGameStateBase()
 	{
-		if (!(*CG::UWorld::GWorld))
+		if (!SDK::UWorld::GWorld)
 			return nullptr;
 
-		CG::AGameStateBase* pGameState = (*CG::UWorld::GWorld)->GameState;
+		SDK::AGameStateBase* pGameState = SDK::UWorld::GWorld->GameState;
 		if (!IsValidObjectPtr(pGameState))
 			return nullptr;
 
 		return pGameState;
 	}
-	static CG::UGameInstance* GetGameInstance()
+	static SDK::UGameInstance* GetGameInstance()
 	{
-		if (!(*CG::UWorld::GWorld))
+		if (!SDK::UWorld::GWorld)
 			return nullptr;
 
-		CG::UGameInstance* pGameInstance = (*CG::UWorld::GWorld)->OwningGameInstance;
+		SDK::UGameInstance* pGameInstance = SDK::UWorld::GWorld->OwningGameInstance;
 		if (!IsValidObjectPtr(pGameInstance))
 			return nullptr;
 
 		return pGameInstance;
 	}
 
-	static CG::ULocalPlayer* GetLocalPlayer(int index = 0)
+	static SDK::ULocalPlayer* GetLocalPlayer(int index = 0)
 	{
-		CG::UGameInstance* pGameInstance = GetGameInstance();
+		SDK::UGameInstance* pGameInstance = GetGameInstance();
 		if (!IsValidObjectPtr(pGameInstance))
 			return nullptr;
 
-		CG::ULocalPlayer* pLocalPlayer = pGameInstance->LocalPlayers[index];
+		SDK::ULocalPlayer* pLocalPlayer = pGameInstance->LocalPlayers[index];
 		if (!IsValidObjectPtr(pLocalPlayer))
 			return nullptr;
 
 		return pLocalPlayer;
 	}
-	static CG::UGameViewportClient* GetViewportClient()
+	static SDK::UGameViewportClient* GetViewportClient()
 	{
-		CG::ULocalPlayer* pLocalPlayer = GetLocalPlayer();
+		SDK::ULocalPlayer* pLocalPlayer = GetLocalPlayer();
 		if (!IsValidObjectPtr(pLocalPlayer))
 			return nullptr;
 
-		CG::UGameViewportClient* pViewportClient = pLocalPlayer->ViewportClient;
+		SDK::UGameViewportClient* pViewportClient = pLocalPlayer->ViewportClient;
 		if (!IsValidObjectPtr(pViewportClient))
 			return nullptr;
 
 		return pViewportClient;
 	}
-	static CG::APlayerController* GetPlayerController()
+	static SDK::APlayerController* GetPlayerController()
 	{
-		CG::ULocalPlayer* LocalPlayer = GetLocalPlayer();
+		SDK::ULocalPlayer* LocalPlayer = GetLocalPlayer();
 		if (!IsValidObjectPtr(LocalPlayer))
 			return nullptr;
 
-		CG::APlayerController* pPlayerController = LocalPlayer->PlayerController;
+		SDK::APlayerController* pPlayerController = LocalPlayer->PlayerController;
 		if (!IsValidObjectPtr(pPlayerController))
 			return nullptr;
 
 		return pPlayerController;
 	}
-	static CG::APawn* GetAcknowledgedPawn()
+	static SDK::APawn* GetAcknowledgedPawn()
 	{
-		CG::APlayerController* pPlayerController = GetPlayerController();
+		SDK::APlayerController* pPlayerController = GetPlayerController();
 		if (!IsValidObjectPtr(pPlayerController))
 			return nullptr;
 
-		CG::APawn* pAcknowledgedPawn = pPlayerController->AcknowledgedPawn;
+		SDK::APawn* pAcknowledgedPawn = pPlayerController->AcknowledgedPawn;
 		if (!IsValidObjectPtr(pAcknowledgedPawn))
 			return nullptr;
 
 		return pAcknowledgedPawn;
 	}
 
-	static CG::APlayerCameraManager* GetPlayerCameraManager()
+	static SDK::APlayerCameraManager* GetPlayerCameraManager()
 	{
-		CG::APlayerController* pPlayerController = GetPlayerController();
+		SDK::APlayerController* pPlayerController = GetPlayerController();
 		if (!IsValidObjectPtr(pPlayerController))
 			return nullptr;
 
-		CG::APlayerCameraManager* pPlayerCameraManager = pPlayerController->PlayerCameraManager;
+		SDK::APlayerCameraManager* pPlayerCameraManager = pPlayerController->PlayerCameraManager;
 		if (!IsValidObjectPtr(pPlayerCameraManager))
 			return nullptr;
 
 		return pPlayerCameraManager;
 	}
 
-	static bool WorldToScreen(CG::FVector in, CG::FVector2D& out, bool relative = false)
+	static bool WorldToScreen(SDK::FVector in, SDK::FVector2D& out, bool relative = false)
 	{
-		CG::APlayerController* pPlayerController = GetPlayerController();
+		SDK::APlayerController* pPlayerController = GetPlayerController();
 		if (!IsValidObjectPtr(pPlayerController))
 			return false;
 
@@ -457,10 +457,10 @@ public:
 	}
 
 	// I made this function so I would have to type less to get the screen position of a world position
-	static CG::FVector2D W2S(CG::FVector in, bool relative = false)
+	static SDK::FVector2D W2S(SDK::FVector in, bool relative = false)
 	{
-		CG::FVector2D out = { 0, 0 };
-		CG::APlayerController* PlayerController = GetPlayerController();
+		SDK::FVector2D out = { 0, 0 };
+		SDK::APlayerController* PlayerController = GetPlayerController();
 		if (!IsValidObjectPtr(PlayerController))
 			return out;
 
@@ -472,7 +472,7 @@ public:
 	template <typename T>
 	static std::vector<T> SortActorsByDistance(std::vector<T> actors)
 	{
-		CG::APawn* pAcknowledgedPawn = GetAcknowledgedPawn();
+		SDK::APawn* pAcknowledgedPawn = GetAcknowledgedPawn();
 		if (!IsValidObjectPtr(pAcknowledgedPawn))
 			return actors;
 
@@ -525,17 +525,17 @@ public:
 		return SortedActors;
 	}
 
-	static void hkPostRender(CG::UObject* pViewportClient, CG::UCanvas* pCanvas)
+	static void hkPostRender(SDK::UObject* pViewportClient, SDK::UCanvas* pCanvas)
 	{
-		CG::ULocalPlayer* pLocalPlayer = GetLocalPlayer();
+		SDK::ULocalPlayer* pLocalPlayer = GetLocalPlayer();
 		if (!IsValidObjectPtr(pLocalPlayer))
 			return oPostRender(pViewportClient, pCanvas);
 
-		CG::FLinearColor Cyan = { 0.f, 1.f, 1.f, 1.f };
-		CG::FLinearColor Black = { 0.f, 0.f, 0.f, 1.f };
+		SDK::FLinearColor Cyan = { 0.f, 1.f, 1.f, 1.f };
+		SDK::FLinearColor Black = { 0.f, 0.f, 0.f, 1.f };
 
 		// The canvas reports its size as the current resolution but in my testing it is always 2048, 1280
-		CG::FVector2D TextSize = pCanvas->K2_TextSize(pFont, L"OmegaWare.xyz", { 1.f, 1.f });
+		SDK::FVector2D TextSize = pCanvas->K2_TextSize(pFont, L"OmegaWare.xyz", { 1.f, 1.f });
 		//pCanvas->K2_DrawText(pFont, L"OmegaWare.xyz", { 1024.f - (TextSize.X / 2), 0.f }, { 1.f, 1.f }, Cyan, 1.f, Black, { 0.f, 0.f }, false, false, true, Black);
 
 		//pCanvas->K2_DrawLine({ 0.f, 0.f }, { 1024.f, 640.f }, 1.f, Cyan);

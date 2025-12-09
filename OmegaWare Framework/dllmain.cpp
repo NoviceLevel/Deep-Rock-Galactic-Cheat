@@ -16,14 +16,13 @@ namespace Cheat
 		if (!renderer.get()->Setup())
 			return false;
 
-#if FRAMEWORK_UNREAL // If the framework is Unreal initalize the SDK assuming the SDK was generated with CheatGeat by Cormm
-		if (!CG::InitSdk())
-			return false;
-
-		if (!(*CG::UWorld::GWorld))
+#if FRAMEWORK_UNREAL // If the framework is Unreal, wait for GWorld to initialize
+		// Dumper-7 SDK doesn't require InitSdk() call
+		
+		if (!SDK::UWorld::GWorld)
 			Utils::LogError(Utils::GetLocation(CurrentLoc), "Waiting for GWorld to initalize");
 
-		while (!(*CG::UWorld::GWorld))
+		while (!SDK::UWorld::GWorld)
 			continue;
 #endif
 
@@ -31,7 +30,7 @@ namespace Cheat
 
 #if FRAMEWORK_UNREAL // If using the Unreal framework print the pointer to the Unreal class to make sure it was initalized
 		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "Unreal: 0x" << unreal.get()).str());
-		FNames::Initialize();
+		// Dumper-7 SDK handles FNames internally, no need to initialize
 #endif
 
 		// Add other globals that need to be initalized here
