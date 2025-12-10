@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 
 ESP::ESP() {};
 
@@ -52,6 +52,31 @@ bool ESP::Setup()
 		{ HASH("ESP_BOX_SHOW_DISTANCE"), "Dystans" },
 	};
 	if (!Cheat::localization->AddToLocale("POL", PolishLocale))
+		return false;
+
+	std::vector<LocaleData> ChineseLocale = {
+		{ HASH("ESP"), "透视" },
+		{ HASH("ESP_ENABLE"), "启用透视" },
+		{ HASH("PLAYER_LIST"), "玩家列表" },
+		{ HASH("ESP_ENEMIES"), "敌人" },
+		{ HASH("ESP_FRIENDLIES"), "友军" },
+		{ HASH("ESP_PLAYERS"), "玩家" },
+		{ HASH("ESP_OBJECTIVES"), "目标" },
+		{ HASH("ESP_SPECIAL_STRUCTURES"), "特殊建筑" },
+		{ HASH("ESP_RESOURCE_CHUNKS"), "资源矿块" },
+		{ HASH("ESP_ACCURATE_BOX"), "精确方框" },
+		{ HASH("ESP_BOX"), "方框" },
+		{ HASH("ESP_NAME"), "名称" },
+		{ HASH("ESP_DISTANCE"), "距离" },
+		{ HASH("ESP_HEALTH_BAR"), "血条" },
+		{ HASH("ESP_ARMOR_BAR"), "护甲条" },
+		{ HASH("ESP_FLAG_INVINCIBLE"), "无敌标记" },
+		{ HASH("ESP_DEBUG"), "调试透视" },
+		{ HASH("ESP_DEBUG_COLOR"), "调试颜色" },
+		{ HASH("ESP_MAX_DISTANCE"), "最大距离" },
+		{ HASH("ESP_INVINCIBLE_FLAG_TEXT"), "无敌" }
+	};
+	if (!Cheat::localization->AddToLocale("CHN", ChineseLocale))
 		return false;
 
 	Cheat::localization->UpdateLocale();
@@ -163,16 +188,16 @@ void ESP::PopulateMenu()
 		if (vecPlayers.empty())
 			ImGui::Text("Not currently in a mission");
 
-		for (CG::AActor* pPlayer : vecPlayers)
+		for (SDK::AActor* pPlayer : vecPlayers)
 		{
 			if (!IsValidObjectPtr(pPlayer))
 				continue;
 
-			CG::ABP_PlayerCharacter_C* pPlayerCharacter = reinterpret_cast<CG::ABP_PlayerCharacter_C*>(pPlayer);
+			SDK::ABP_PlayerCharacter_C* pPlayerCharacter = reinterpret_cast<SDK::ABP_PlayerCharacter_C*>(pPlayer);
 			if (!IsValidObjectPtr(pPlayerCharacter))
 				break;
 
-			CG::AFSDPlayerState* pPlayerState = pPlayerCharacter->GetPlayerState();
+			SDK::AFSDPlayerState* pPlayerState = pPlayerCharacter->GetPlayerState();
 			if (!IsValidObjectPtr(pPlayerState))
 				break;
 
@@ -183,8 +208,8 @@ void ESP::PopulateMenu()
 			if (ImGui::Button(szName)) {
 				pSelectedPlayer = pPlayerCharacter;
 
-				CG::AFSDPlayerController* pPlayerController = reinterpret_cast<CG::AFSDPlayerController*>(Cheat::unreal->GetPlayerController());
-				pPlayerController->SetViewTargetWithBlend(pPlayerCharacter, 0.5f, CG::EViewTargetBlendFunction::VTBlend_Linear, 0.f, false);
+				SDK::AFSDPlayerController* pPlayerController = reinterpret_cast<SDK::AFSDPlayerController*>(Cheat::unreal->GetPlayerController());
+				pPlayerController->SetViewTargetWithBlend(pPlayerCharacter, 0.5f, SDK::EViewTargetBlendFunction::VTBlend_Linear, 0.f, false);
 				pPlayerController->PlayerCameraManager->ViewTargetOffset.X += 30.f;
 				pPlayerController->PlayerCameraManager->ViewTargetOffset.Y += 30.f;
 			}
@@ -199,11 +224,11 @@ void ESP::PopulateMenu()
 				return;
 			}
 
-			CG::AFSDPlayerState* pPlayerState = pSelectedPlayer->GetPlayerState();
+			SDK::AFSDPlayerState* pPlayerState = pSelectedPlayer->GetPlayerState();
 			if (!IsValidObjectPtr(pPlayerState))
 				return;
 
-			CG::UPlayerHealthComponent* pHealthComponent = pSelectedPlayer->HealthComponent;
+			SDK::UPlayerHealthComponent* pHealthComponent = pSelectedPlayer->HealthComponent;
 			if (!IsValidObjectPtr(pHealthComponent))
 				return;
 
@@ -236,7 +261,7 @@ void ESP::Render()
 
 	Unreal* pUnreal = Cheat::unreal.get();
 
-	CG::APawn* pDRGPlayer = pUnreal->GetAcknowledgedPawn();
+	SDK::APawn* pDRGPlayer = pUnreal->GetAcknowledgedPawn();
 	if (!pDRGPlayer)
 		return;
 
@@ -262,75 +287,39 @@ void ESP::Render()
 
 	ImU32 uiDebugColor = ImGui::ColorConvertFloat4ToU32(*reinterpret_cast<ImVec4*>(clrDebug));
 
-	for (FNames::ActorInfo_t stInfo : pUnreal->ActorList) {
-		switch (stInfo.iLookupIndex) {
-		case FNames::DefaultPawn:
-		case FNames::PathfinderVehicle:
-		case FNames::PlayerCameraDrone:
-		case FNames::FSDPawn:
-		case FNames::Caretaker:
-		case FNames::EscortMule:
-		case FNames::TowerModuleBase:
-		case FNames::GuntowerModule:
-		case FNames::GuntowerWeakPoint:
-		case FNames::TowerEventModule:
-		case FNames::EnemyPawn:
-		case FNames::StabberVineRoot:
-		case FNames::ParasiteEnemy:
-		case FNames::InsectSwarmSpawner:
-		case FNames::HydraWeedHealer:
-		case FNames::ShootingPlant:
-		case FNames::HydraWeedCore:
-		case FNames::FacilityTurret:
-		case FNames::TentacleBase:
-		case FNames::CaveLeech:
-		case FNames::DeepPathfinderCharacter:
-		case FNames::EnemyDeepPathfinderCharacter:
-		case FNames::AFlyingBug:
-		case FNames::ConvertedRobot:
-		case FNames::FlyingEnemyDeepPathfinderCharacter:
-		case FNames::FriendlyParasite:
-		case FNames::HalloweenSkull:
-		case FNames::InsectSwarmEnemy:
-		case FNames::PatrolBot:
-		case FNames::PlagueWorm:
-		case FNames::ProspectorRobot:
-		case FNames::SharkEnemy:
-		case FNames::Shredder:
-		case FNames::SpiderEnemy:
-		case FNames::TerminatorEnemy:
-		case FNames::WoodLouse:
-		case FNames::BP_ShieldRegenerator_Mover_C:
-		case FNames::ENE_Jelly_Passive_C:
-		case FNames::Bosco:
-		case FNames::CaveWorm:
-		case FNames::Maggot:
-		case FNames::DroneBase:
-		case FNames::DroneCharacter:
-		case FNames::MULE:
-		case FNames::RecallableActor:
+	std::vector<SDK::AActor*> AllActors = pUnreal->Actors;
+	
+	for (SDK::AActor* pActor : AllActors) {
+		if (!IsValidObjectPtr(pActor))
+			continue;
+
+		float flDistance = pActor->GetDistanceTo(pDRGPlayer);
+		
+		if (pActor->IsA(SDK::AFSDPawn::StaticClass()))
 		{
-			if ((iESPMaxDistance && stInfo.flDistance > iESPMaxDistance) || !IsValidObjectPtr(stInfo.pActor))
-				break;
+			if (iESPMaxDistance && flDistance > iESPMaxDistance)
+				continue;
 
-			CG::AFSDPawn* pPawn = reinterpret_cast<CG::AFSDPawn*>(stInfo.pActor);
-			if (!IsValidObjectPtr(pPawn) || !pUnreal->IsAFast(pPawn->Class, FNames::FSDPawn))
-				break;
+			SDK::AFSDPawn* pPawn = static_cast<SDK::AFSDPawn*>(pActor);
+			if (!IsValidObjectPtr(pPawn))
+				continue;
 
-			CG::UHealthComponent* pHealthComponent = reinterpret_cast<CG::UHealthComponent*>(pPawn->GetHealthComponent());
-			if (!IsValidObjectPtr(pHealthComponent) || pHealthComponent->InternalIndex <= 0 || pHealthComponent->Name.ComparisonIndex == 0 || pHealthComponent->IsDead())
-				break;
+			SDK::UHealthComponentBase* pHealthComponentBase = pPawn->GetHealthComponent();
+			if (!IsValidObjectPtr(pHealthComponentBase) || pHealthComponentBase->IsDead())
+				continue;
 
-			bool bIsEnemy = pPawn->GetAttitude() >= CG::EPawnAttitude::Hostile;
+			SDK::UHealthComponent* pHealthComponent = static_cast<SDK::UHealthComponent*>(pHealthComponentBase);
+
+			bool bIsEnemy = pPawn->GetAttitude() >= SDK::EPawnAttitude::Hostile;
 			if ((bIsEnemy && !stEnemies.bEnabled) || (!bIsEnemy && !stFriendlies.bEnabled))
-				break;
+				continue;
 
-			CG::FVector vecLocation, vecExtent;
-			stInfo.pActor->GetActorBounds(true, &vecLocation, &vecExtent, false);
+			SDK::FVector vecLocation, vecExtent;
+			pActor->GetActorBounds(true, &vecLocation, &vecExtent, false);
 
 			ImRect rectBox{};
 			if (!GetBoxFromBBox(vecLocation, vecExtent, rectBox, bIsEnemy ? stEnemies.bAccurateBox : stFriendlies.bAccurateBox))
-				break;
+				continue;
 
 			if (bIsEnemy ? stEnemies.bBox : stFriendlies.bBox) {
 				ImGui::GetBackgroundDrawList()->AddRect(rectBox.Min, rectBox.Max, bIsEnemy ? uiEnemiesBoxOutline : uiFriendliesBoxOutline, 0.f, ImDrawFlags_None, 3.f);
@@ -338,10 +327,8 @@ void ESP::Render()
 			}
 
 			if (bIsEnemy ? stEnemies.bName : stFriendlies.bName) {
-
-				// EVIL TERRIBLE HORRIBLE HACK
 				char szName[64];
-				szName[stInfo.pActor->Name.GetName().copy(szName, 63, 0)] = 0;
+				szName[pActor->Name.ToString().copy(szName, 63, 0)] = 0;
 
 				ImVec2 vecTextSize = ImGui::CalcTextSize(szName);
 				ImGui::OutlinedText({ rectBox.Min.x + (rectBox.GetWidth() - vecTextSize.x) / 2, rectBox.Min.y - 17.f }, White, szName);
@@ -349,13 +336,10 @@ void ESP::Render()
 
 			if (bIsEnemy ? stEnemies.bDistance : stFriendlies.bDistance)
 			{
-				std::stringstream ssDistance;
-				ssDistance << "[ " << std::to_string(static_cast<int>(stInfo.flDistance)) << "m ]";
-
-				std::string sDistance = ssDistance.str();
-				ImVec2 vecTextSize = ImGui::CalcTextSize(sDistance.c_str());
-
-				ImGui::OutlinedText({ rectBox.Min.x + (rectBox.GetWidth() - vecTextSize.x) / 2, rectBox.Max.y + 2.f }, White, sDistance.c_str());
+				char szDistance[32];
+				snprintf(szDistance, sizeof(szDistance), "[ %dm ]", static_cast<int>(flDistance));
+				ImVec2 vecTextSize = ImGui::CalcTextSize(szDistance);
+				ImGui::OutlinedText({ rectBox.Min.x + (rectBox.GetWidth() - vecTextSize.x) / 2, rectBox.Max.y + 2.f }, White, szDistance);
 			}
 
 			ImVec2 vecFlags(rectBox.Max.x + 4.f, rectBox.Min.y);
@@ -388,122 +372,102 @@ void ESP::Render()
 				vecFlags.y += 16.f;
 			}
 
-			break;
+			continue;
 		}
-		case FNames::BP_Collectible_Simple_C:      // Resource
-		case FNames::BP_Collectible_Barley_Base_C: // BEER
-		case FNames::BP_Collectible_Base_C:        // YIPPEE
-		case FNames::Gem:                          // What do you think dumbass
-		case FNames::BP_AlienEgg_C:
-		case FNames::BP_MiniMule_Salvage_C:
-		case FNames::BP_MuleLeg_C:
-		case FNames::BP_DorettaHead_C:
+
+		if ((stObjectives.bEnabled || stSpecialStructures.bEnabled) && (!iESPMaxDistance || flDistance <= iESPMaxDistance))
 		{
-			if (!stObjectives.bEnabled || (iESPMaxDistance && stInfo.flDistance > iESPMaxDistance) || !IsValidObjectPtr(stInfo.pActor))
-				break;
-
-			CG::FVector vecLocation, vecExtent;
-			stInfo.pActor->GetActorBounds(true, &vecLocation, &vecExtent, false);
-
-			ImRect rectBox{};
-			if (!GetBoxFromBBox(vecLocation, vecExtent, rectBox, stObjectives.bAccurateBox))
-				break;
-
-			if (stObjectives.bBox) {
-				ImGui::GetBackgroundDrawList()->AddRect(rectBox.Min, rectBox.Max, uiObjectivesBoxOutline, 0.f, ImDrawFlags_None, 3.f);
-				ImGui::GetBackgroundDrawList()->AddRect(rectBox.Min, rectBox.Max, uiObjectivesBox);
+			std::string sActorName = pActor->Name.ToString();
+			
+			bool bIsObjective = false;
+			bool bIsSpecialStructure = false;
+			
+			if (stObjectives.bEnabled) {
+				if (pActor->IsA(SDK::AGem::StaticClass()) ||
+					sActorName.find("BP_Collectible") != std::string::npos ||
+					sActorName.find("BP_AlienEgg") != std::string::npos ||
+					sActorName.find("BP_MiniMule_Salvage") != std::string::npos ||
+					sActorName.find("BP_MuleLeg") != std::string::npos ||
+					sActorName.find("BP_DorettaHead") != std::string::npos)
+				{
+					bIsObjective = true;
+				}
+			}
+			
+			if (!bIsObjective && stSpecialStructures.bEnabled) {
+				if (sActorName.find("BP_AmberEvent") != std::string::npos ||
+					sActorName.find("BP_ProspectorDataDeposit") != std::string::npos ||
+					sActorName.find("BP_JetBootsBox") != std::string::npos ||
+					sActorName.find("BP_LostPackStart") != std::string::npos ||
+					sActorName.find("BP_LostPack") != std::string::npos ||
+					sActorName.find("BP_GuntowerEvent") != std::string::npos)
+				{
+					bIsSpecialStructure = true;
+				}
 			}
 
-			if (stObjectives.bName) {
-				// EVIL TERRIBLE HORRIBLE HACK
-				char szName[64];
-				szName[stInfo.pActor->Name.GetName().copy(szName, 63, 0)] = 0;
-
-				ImVec2 vecTextSize = ImGui::CalcTextSize(szName);
-				ImGui::OutlinedText({ rectBox.Min.x + (rectBox.GetWidth() - vecTextSize.x) / 2, rectBox.Min.y - 17.f }, White, szName);
-			}
-
-			if (stObjectives.bDistance)
+			if (bIsObjective || bIsSpecialStructure)
 			{
-				std::stringstream ssDistance;
-				ssDistance << "[ " << std::to_string(static_cast<int>(stInfo.flDistance)) << "m ]";
-
-				std::string sDistance = ssDistance.str();
-				ImVec2 vecTextSize = ImGui::CalcTextSize(sDistance.c_str());
-
-				ImGui::OutlinedText({ rectBox.Min.x + (rectBox.GetWidth() - vecTextSize.x) / 2, rectBox.Max.y + 2.f }, White, sDistance.c_str());
-			}
-
-			break;
-		}
-		case FNames::BP_AmberEvent_C:
-		case FNames::BP_ProspectorDataDeposit_C:
-		case FNames::BP_JetBootsBox_C: // JetBootsBox
-		case FNames::BP_LostPackStart_C: // TreasureBeacon
-		case FNames::BP_LostPack_C: //  TreasureContainer
-		case FNames::BP_GuntowerEvent_C:
-		{
-			if (!stSpecialStructures.bEnabled || (iESPMaxDistance && stInfo.flDistance > iESPMaxDistance) || !IsValidObjectPtr(stInfo.pActor))
-				break;
-
-			CG::FVector vecLocation, vecExtent;
-			stInfo.pActor->GetActorBounds(true, &vecLocation, &vecExtent, false);
-
-			ImRect rectBox{};
-			if (!GetBoxFromBBox(vecLocation, vecExtent, rectBox, stSpecialStructures.bAccurateBox))
-				break;
-
-			if (stSpecialStructures.bBox) {
-				ImGui::GetBackgroundDrawList()->AddRect(rectBox.Min, rectBox.Max, uiSpecialStructuresBoxOutline, 0.f, ImDrawFlags_None, 3.f);
-				ImGui::GetBackgroundDrawList()->AddRect(rectBox.Min, rectBox.Max, uiSpecialStructuresBox);
-			}
-
-			if (stSpecialStructures.bName) {
+				bool bAccurateBox = bIsObjective ? stObjectives.bAccurateBox : stSpecialStructures.bAccurateBox;
+				bool bBox = bIsObjective ? stObjectives.bBox : stSpecialStructures.bBox;
+				bool bName = bIsObjective ? stObjectives.bName : stSpecialStructures.bName;
+				bool bDistance = bIsObjective ? stObjectives.bDistance : stSpecialStructures.bDistance;
+				ImU32 uiBoxColor = bIsObjective ? uiObjectivesBox : uiSpecialStructuresBox;
+				ImU32 uiBoxOutline = bIsObjective ? uiObjectivesBoxOutline : uiSpecialStructuresBoxOutline;
 				
-				// EVIL TERRIBLE HORRIBLE HACK
-				char szName[64];
-				szName[stInfo.pActor->Name.GetName().copy(szName, 63, 0)] = 0;
+				SDK::FVector vecLocation, vecExtent;
+				pActor->GetActorBounds(true, &vecLocation, &vecExtent, false);
 
-				ImVec2 vecTextSize = ImGui::CalcTextSize(szName);
-				ImGui::OutlinedText({ rectBox.Min.x + (rectBox.GetWidth() - vecTextSize.x) / 2, rectBox.Min.y - 17.f }, White, szName);
+				ImRect rectBox{};
+				if (!GetBoxFromBBox(vecLocation, vecExtent, rectBox, bAccurateBox))
+					continue;
+
+				if (bBox) {
+					ImGui::GetBackgroundDrawList()->AddRect(rectBox.Min, rectBox.Max, uiBoxOutline, 0.f, ImDrawFlags_None, 3.f);
+					ImGui::GetBackgroundDrawList()->AddRect(rectBox.Min, rectBox.Max, uiBoxColor);
+				}
+
+				if (bName) {
+					char szName[64];
+					szName[sActorName.copy(szName, 63, 0)] = 0;
+
+					ImVec2 vecTextSize = ImGui::CalcTextSize(szName);
+					ImGui::OutlinedText({ rectBox.Min.x + (rectBox.GetWidth() - vecTextSize.x) / 2, rectBox.Min.y - 17.f }, White, szName);
+				}
+
+				if (bDistance)
+				{
+					char szDistance[32];
+					snprintf(szDistance, sizeof(szDistance), "[ %dm ]", static_cast<int>(flDistance));
+					ImVec2 vecTextSize = ImGui::CalcTextSize(szDistance);
+					ImGui::OutlinedText({ rectBox.Min.x + (rectBox.GetWidth() - vecTextSize.x) / 2, rectBox.Max.y + 2.f }, White, szDistance);
+				}
+
+				continue;
 			}
-
-			if (stSpecialStructures.bDistance)
-			{
-				std::stringstream ssDistance;
-				ssDistance << "[ " << std::to_string(static_cast<int>(stInfo.flDistance)) << "m ]";
-
-				std::string sDistance = ssDistance.str();
-				ImVec2 vecTextSize = ImGui::CalcTextSize(sDistance.c_str());
-
-				ImGui::OutlinedText({ rectBox.Min.x + (rectBox.GetWidth() - vecTextSize.x) / 2, rectBox.Max.y + 2.f }, White, sDistance.c_str());
-			}
-
-			break;
 		}
-		case FNames::Character:
-		case FNames::PlayerCharacter:
+
+		if (pActor->IsA(SDK::ABP_PlayerCharacter_C::StaticClass()))
 		{
-			vecPlayers.push_back(stInfo.pActor);
+			vecPlayers.push_back(pActor);
 
-			if (!stPlayers.bEnabled || (iESPMaxDistance && stInfo.flDistance > iESPMaxDistance) || !IsValidObjectPtr(stInfo.pActor))
-				break;
+			if (!stPlayers.bEnabled || (iESPMaxDistance && flDistance > iESPMaxDistance))
+				continue;
 
-			CG::ABP_PlayerCharacter_C* pPawn = reinterpret_cast<CG::ABP_PlayerCharacter_C*>(stInfo.pActor);
-			if (!IsValidObjectPtr(pPawn) || !stInfo.pActor->IsA(CG::ABP_PlayerCharacter_C::StaticClass()))
-				break;
+			SDK::ABP_PlayerCharacter_C* pPawn = static_cast<SDK::ABP_PlayerCharacter_C*>(pActor);
+			if (!IsValidObjectPtr(pPawn))
+				continue;
 
-			CG::UHealthComponent* pHealthComponent = reinterpret_cast<CG::UHealthComponent*>(pPawn->HealthComponent);
-			if (pPawn->IsLocallyControlled() || !IsValidObjectPtr(pHealthComponent) || pHealthComponent->InternalIndex <= 0 || pHealthComponent->Name.ComparisonIndex == 0 || pHealthComponent->IsDead())
-				break;
+			SDK::UHealthComponent* pHealthComponent = pPawn->HealthComponent;
+			if (pPawn->IsLocallyControlled() || !IsValidObjectPtr(pHealthComponent) || pHealthComponent->IsDead())
+				continue;
 
-
-			CG::FVector vecLocation, vecExtent;
-			stInfo.pActor->GetActorBounds(true, &vecLocation, &vecExtent, false);
+			SDK::FVector vecLocation, vecExtent;
+			pActor->GetActorBounds(true, &vecLocation, &vecExtent, false);
 
 			ImRect rectBox{};
 			if (!GetBoxFromBBox(vecLocation, vecExtent, rectBox, stPlayers.bAccurateBox))
-				break;
+				continue;
 
 			if (stPlayers.bBox) {
 				ImGui::GetBackgroundDrawList()->AddRect(rectBox.Min, rectBox.Max, uiPlayersBoxOutline, 0.f, ImDrawFlags_None, 3.f);
@@ -511,12 +475,10 @@ void ESP::Render()
 			}
 
 			if (stPlayers.bName) {
-
-				CG::AFSDPlayerState* pPlayerState = pPawn->GetPlayerState();
+				SDK::AFSDPlayerState* pPlayerState = pPawn->GetPlayerState();
 				if (!IsValidObjectPtr(pPlayerState))
-					break;
+					continue;
 
-				// EVIL TERRIBLE HORRIBLE HACK
 				char szName[64];
 				szName[pPlayerState->GetPlayerName().ToString().copy(szName, 63, 0)] = 0;
 
@@ -526,13 +488,10 @@ void ESP::Render()
 
 			if (stPlayers.bDistance)
 			{
-				std::stringstream ssDistance;
-				ssDistance << "[ " << std::to_string(static_cast<int>(stInfo.flDistance)) << "m ]";
-
-				std::string sDistance = ssDistance.str();
-				ImVec2 vecTextSize = ImGui::CalcTextSize(sDistance.c_str());
-
-				ImGui::OutlinedText({ rectBox.Min.x + (rectBox.GetWidth() - vecTextSize.x) / 2, rectBox.Max.y + 2.f }, White, sDistance.c_str());
+				char szDistance[32];
+				snprintf(szDistance, sizeof(szDistance), "[ %dm ]", static_cast<int>(flDistance));
+				ImVec2 vecTextSize = ImGui::CalcTextSize(szDistance);
+				ImGui::OutlinedText({ rectBox.Min.x + (rectBox.GetWidth() - vecTextSize.x) / 2, rectBox.Max.y + 2.f }, White, szDistance);
 			}
 
 			ImVec2 vecFlags(rectBox.Max.x + 4.f, rectBox.Min.y);
@@ -565,107 +524,110 @@ void ESP::Render()
 				vecFlags.y += 16.f;
 			}
 
-			break;
+			continue;
 		}
-		case FNames::ResourceChunk: // Dropped resource chunks (gold, nitra, ect...)
+
+		if (stResourceChunks.bEnabled && (!iESPMaxDistance || flDistance <= iESPMaxDistance))
 		{
-			if (!stResourceChunks.bEnabled || (iESPMaxDistance && stInfo.flDistance > iESPMaxDistance) || !IsValidObjectPtr(stInfo.pActor))
-				break;
-
-			CG::FVector vecLocation, vecExtent;
-			stInfo.pActor->GetActorBounds(true, &vecLocation, &vecExtent, false);
-
-			ImRect rectBox{};
-			if (!GetBoxFromBBox(vecLocation, vecExtent, rectBox, stResourceChunks.bAccurateBox))
-				break;
-
-			if (stResourceChunks.bBox) {
-				ImGui::GetBackgroundDrawList()->AddRect(rectBox.Min, rectBox.Max, uiResourceChunksBoxOutline, 0.f, ImDrawFlags_None, 3.f);
-				ImGui::GetBackgroundDrawList()->AddRect(rectBox.Min, rectBox.Max, uiResourceChunksBox);
-			}
-
-			if (stResourceChunks.bName) {
-
-				// EVIL TERRIBLE HORRIBLE HACK
-				char szName[64];
-				szName[stInfo.pActor->Name.GetName().copy(szName, 63, 0)] = 0;
-
-				ImVec2 vecTextSize = ImGui::CalcTextSize(szName);
-				ImGui::OutlinedText({ rectBox.Min.x + (rectBox.GetWidth() - vecTextSize.x) / 2, rectBox.Min.y - 17.f }, White, szName);
-			}
-
-			if (stResourceChunks.bDistance)
+			if (pActor->IsA(SDK::AResourceChunk::StaticClass()))
 			{
-				std::stringstream ssDistance;
-				ssDistance << "[ " << std::to_string(static_cast<int>(stInfo.flDistance)) << "m ]";
+				SDK::FVector vecLocation, vecExtent;
+				pActor->GetActorBounds(true, &vecLocation, &vecExtent, false);
 
-				std::string sDistance = ssDistance.str();
-				ImVec2 vecTextSize = ImGui::CalcTextSize(sDistance.c_str());
+				ImRect rectBox{};
+				if (!GetBoxFromBBox(vecLocation, vecExtent, rectBox, stResourceChunks.bAccurateBox))
+					continue;
 
-				ImGui::OutlinedText({ rectBox.Min.x + (rectBox.GetWidth() - vecTextSize.x) / 2, rectBox.Max.y + 2.f }, White, sDistance.c_str());
+				if (stResourceChunks.bBox) {
+					ImGui::GetBackgroundDrawList()->AddRect(rectBox.Min, rectBox.Max, uiResourceChunksBoxOutline, 0.f, ImDrawFlags_None, 3.f);
+					ImGui::GetBackgroundDrawList()->AddRect(rectBox.Min, rectBox.Max, uiResourceChunksBox);
+				}
+
+				if (stResourceChunks.bName || stResourceChunks.bDistance) {
+					if (stResourceChunks.bName) {
+						char szName[64];
+						szName[pActor->Name.ToString().copy(szName, 63, 0)] = 0;
+
+						ImVec2 vecTextSize = ImGui::CalcTextSize(szName);
+						ImGui::OutlinedText({ rectBox.Min.x + (rectBox.GetWidth() - vecTextSize.x) / 2, rectBox.Min.y - 17.f }, White, szName);
+					}
+
+					if (stResourceChunks.bDistance)
+					{
+						char szDistance[32];
+						snprintf(szDistance, sizeof(szDistance), "[ %dm ]", static_cast<int>(flDistance));
+						ImVec2 vecTextSize = ImGui::CalcTextSize(szDistance);
+						ImGui::OutlinedText({ rectBox.Min.x + (rectBox.GetWidth() - vecTextSize.x) / 2, rectBox.Max.y + 2.f }, White, szDistance);
+					}
+				}
+
+				continue;
 			}
-
-			break;
 		}
-		default:
+
+		if (iDebug > 0 && flDistance <= iDebug)
 		{
-			if (stInfo.flDistance > iDebug)
-				break;
+			SDK::FVector vecLocation, vecExtent;
+			pActor->GetActorBounds(true, &vecLocation, &vecExtent, false);
 
-			if (!IsValidObjectPtr(stInfo.pActor))
-				break;
-
-			CG::FVector vecLocation, vecExtent;
-			stInfo.pActor->GetActorBounds(true, &vecLocation, &vecExtent, false);
-
-			CG::FVector2D vecCenter;
+			SDK::FVector2D vecCenter;
 			if (!pUnreal->WorldToScreen(vecLocation, vecCenter))
-				break;
+				continue;
 
 			char szName[64];
-			for (CG::UStruct* pStruct = static_cast<CG::UStruct*>(stInfo.pActor->Class); IsValidObjectPtr(pStruct); pStruct = pStruct->SuperField) {
-
-				szName[pStruct->Name.GetName().copy(szName, 63, 0)] = 0;
+			for (SDK::UStruct* pStruct = static_cast<SDK::UStruct*>(pActor->Class); IsValidObjectPtr(pStruct); pStruct = pStruct->Super) {
+				szName[pStruct->Name.ToString().copy(szName, 63, 0)] = 0;
 
 				ImVec2 vecTextSize = ImGui::CalcTextSize(szName);
 				ImGui::OutlinedText({ vecCenter.X - vecTextSize.x / 2, vecCenter.Y - 8.f }, uiDebugColor, szName);
 				vecCenter.Y += vecTextSize.y + 2.f;
 			}
-
-			break;
-		}}
+		}
 	}
 }
 
-bool ESP::GetBoxFromBBox(CG::FVector& vecLocation, CG::FVector& vecExtent, ImRect& rectOut, bool bAccurate = true) {
+bool ESP::GetBoxFromBBox(SDK::FVector& vecLocation, SDK::FVector& vecExtent, ImRect& rectOut, bool bAccurate = true) {
 
 	Unreal* pUnreal = Cheat::unreal.get();
 
 	if (bAccurate) {
-		CG::FVector2D v1, v2, v3, v4, v5, v6, v7, v8;
-		if (!(
-			pUnreal->WorldToScreen({ vecLocation.X + vecExtent.X, vecLocation.Y + vecExtent.Y, vecLocation.Z + vecExtent.Z }, v1) &&
-			pUnreal->WorldToScreen({ vecLocation.X - vecExtent.X, vecLocation.Y + vecExtent.Y, vecLocation.Z + vecExtent.Z }, v2) &&
-			pUnreal->WorldToScreen({ vecLocation.X + vecExtent.X, vecLocation.Y - vecExtent.Y, vecLocation.Z + vecExtent.Z }, v3) &&
-			pUnreal->WorldToScreen({ vecLocation.X - vecExtent.X, vecLocation.Y - vecExtent.Y, vecLocation.Z + vecExtent.Z }, v4) &&
-			pUnreal->WorldToScreen({ vecLocation.X + vecExtent.X, vecLocation.Y + vecExtent.Y, vecLocation.Z - vecExtent.Z }, v5) &&
-			pUnreal->WorldToScreen({ vecLocation.X - vecExtent.X, vecLocation.Y + vecExtent.Y, vecLocation.Z - vecExtent.Z }, v6) &&
-			pUnreal->WorldToScreen({ vecLocation.X + vecExtent.X, vecLocation.Y - vecExtent.Y, vecLocation.Z - vecExtent.Z }, v7) &&
-			pUnreal->WorldToScreen({ vecLocation.X - vecExtent.X, vecLocation.Y - vecExtent.Y, vecLocation.Z - vecExtent.Z }, v8)
-			)) {
+		SDK::FVector2D v1, v2, v3, v4, v5, v6, v7, v8;
+		std::vector<SDK::FVector2D*> validPoints;
+		
+		if (pUnreal->WorldToScreen({ vecLocation.X + vecExtent.X, vecLocation.Y + vecExtent.Y, vecLocation.Z + vecExtent.Z }, v1))
+			validPoints.push_back(&v1);
+		if (pUnreal->WorldToScreen({ vecLocation.X - vecExtent.X, vecLocation.Y + vecExtent.Y, vecLocation.Z + vecExtent.Z }, v2))
+			validPoints.push_back(&v2);
+		if (pUnreal->WorldToScreen({ vecLocation.X + vecExtent.X, vecLocation.Y - vecExtent.Y, vecLocation.Z + vecExtent.Z }, v3))
+			validPoints.push_back(&v3);
+		if (pUnreal->WorldToScreen({ vecLocation.X - vecExtent.X, vecLocation.Y - vecExtent.Y, vecLocation.Z + vecExtent.Z }, v4))
+			validPoints.push_back(&v4);
+		if (pUnreal->WorldToScreen({ vecLocation.X + vecExtent.X, vecLocation.Y + vecExtent.Y, vecLocation.Z - vecExtent.Z }, v5))
+			validPoints.push_back(&v5);
+		if (pUnreal->WorldToScreen({ vecLocation.X - vecExtent.X, vecLocation.Y + vecExtent.Y, vecLocation.Z - vecExtent.Z }, v6))
+			validPoints.push_back(&v6);
+		if (pUnreal->WorldToScreen({ vecLocation.X + vecExtent.X, vecLocation.Y - vecExtent.Y, vecLocation.Z - vecExtent.Z }, v7))
+			validPoints.push_back(&v7);
+		if (pUnreal->WorldToScreen({ vecLocation.X - vecExtent.X, vecLocation.Y - vecExtent.Y, vecLocation.Z - vecExtent.Z }, v8))
+			validPoints.push_back(&v8);
+
+		if (validPoints.size() < 2)
 			return false;
+
+		rectOut.Min.x = rectOut.Max.x = validPoints[0]->X;
+		rectOut.Min.y = rectOut.Max.y = validPoints[0]->Y;
+
+		for (SDK::FVector2D* p : validPoints) {
+			rectOut.Min.x = std::min(rectOut.Min.x, p->X);
+			rectOut.Max.x = std::max(rectOut.Max.x, p->X);
+			rectOut.Min.y = std::min(rectOut.Min.y, p->Y);
+			rectOut.Max.y = std::max(rectOut.Max.y, p->Y);
 		}
-
-		rectOut.Min.x = std::min({ v1.X, v2.X, v3.X, v4.X, v5.X, v6.X, v7.X, v8.X });
-		rectOut.Max.x = std::max({ v1.X, v2.X, v3.X, v4.X, v5.X, v6.X, v7.X, v8.X });
-
-		rectOut.Min.y = std::min({ v1.Y, v2.Y, v3.Y, v4.Y, v5.Y, v6.Y, v7.Y, v8.Y });
-		rectOut.Max.y = std::max({ v1.Y, v2.Y, v3.Y, v4.Y, v5.Y, v6.Y, v7.Y, v8.Y });
 
 		return true;
 	}
 
-	CG::FVector2D v1, v2;
+	SDK::FVector2D v1, v2;
 	if (!(
 		pUnreal->WorldToScreen({ vecLocation.X, vecLocation.Y, vecLocation.Z + vecExtent.Z }, v1) &&
 		pUnreal->WorldToScreen({ vecLocation.X, vecLocation.Y, vecLocation.Z - vecExtent.Z }, v2)

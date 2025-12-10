@@ -37,6 +37,17 @@ bool WeaponModifications::Setup()
 	if (!Cheat::localization->AddToLocale("POL", PolishData))
 		return false;
 
+	std::vector<LocaleData> ChineseData = {
+		{ HASH("INFINITE_AMMO"), "无限弹药" },
+		{ HASH("NO_OVERHEATING"), "无过热" },
+		{ HASH("NO_RELOAD"), "无需换弹" },
+		{ HASH("NO_RECOIL"), "无后坐力" },
+		{ HASH("GRAPPLE_RESTRICTIONS"), "无抓钩限制" },
+		{ HASH("GRAPPLE_MAX_SPEED"), "速度" }
+	};
+	if (!Cheat::localization->AddToLocale("CHN", ChineseData))
+		return false;
+
 	Cheat::localization->UpdateLocale();
 
 	Utils::LogDebug(Utils::GetLocation(CurrentLoc), "Feature: PlayerModifications Initialized");
@@ -77,27 +88,38 @@ void WeaponModifications::Run() {
 
 	Unreal* pUnreal = Cheat::unreal.get();
 
-	CG::ULocalPlayer* pLocalPlayer = pUnreal->GetLocalPlayer();
+	SDK::ULocalPlayer* pLocalPlayer = pUnreal->GetLocalPlayer();
 	if (!pLocalPlayer)
 		return;
 
-	CG::ABP_PlayerCharacter_C* pDRGPlayer = static_cast<CG::ABP_PlayerCharacter_C*>(pUnreal->GetAcknowledgedPawn());
+	SDK::AGameStateBase* pGameState = pUnreal->GetGameStateBase();
+	if (!IsValidObjectPtr(pGameState))
+		return;
+
+	SDK::AFSDGameState* pFSDGameState = static_cast<SDK::AFSDGameState*>(pGameState);
+	if (IsValidObjectPtr(pFSDGameState) && pFSDGameState->IsOnSpaceRig)
+		return;
+
+	SDK::ABP_PlayerCharacter_C* pDRGPlayer = static_cast<SDK::ABP_PlayerCharacter_C*>(pUnreal->GetAcknowledgedPawn());
 	if (!IsValidObjectPtr(pDRGPlayer))
 		return;
 
-	CG::UInventoryComponent* pInventoryComponent = pDRGPlayer->InventoryComponent;
+	if (!pDRGPlayer->CharacterMovement || !pDRGPlayer->HealthComponent)
+		return;
+
+	SDK::UInventoryComponent* pInventoryComponent = pDRGPlayer->InventoryComponent;
 	if (!IsValidObjectPtr(pInventoryComponent) || !pInventoryComponent->bItemsLoaded)
 		return;
 
-	CG::AItem* pItem = pDRGPlayer->GetEquippedItem();
+	SDK::AItem* pItem = pDRGPlayer->GetEquippedItem();
 	if (!IsValidObjectPtr(pItem))
 		return;
 
-	CG::UItemID* pItemID = pItem->ItemID;
+	SDK::UItemID* pItemID = pItem->ItemID;
 	if (!IsValidObjectPtr(pItemID))
 		return;
 
-	if (!IsValidObjectPtr(pItemID->GetItemData())) // Important we check this, will stop us from resupplying the "pipeline" LOL
+	if (!IsValidObjectPtr(pItemID->GetItemData()))
 		return;
 
 	if (bInfiniteAmmo) {
@@ -106,18 +128,25 @@ void WeaponModifications::Run() {
 		pInventoryComponent->Resupply(100.f);
 	}
 
-	CG::APickaxeItem* pPickaxe = pInventoryComponent->MiningItem;
+	SDK::APickaxeItem* pPickaxe = pInventoryComponent->MiningItem;
 	if (IsValidObjectPtr(pPickaxe)) {
-		pPickaxe->DamageRange = (true) ? 999999.f : 200.f;
+		pPickaxe->DamageRange = 999999.f;
 
 		if (bInfiniteAmmo)
 			pPickaxe->SpecialCooldownRemaining = 0.f;
 	}
 
-	switch (FNames::GetLookupIndex(pItem->Name.ComparisonIndex)) {
-	case FNames::WPN_GrapplingGun_C:
-	{
-		CG::AWPN_GrapplingGun_C* pGrapplingGun = static_cast<CG::AWPN_GrapplingGun_C*>(pItem);
+	if (bNoOverheating) {
+		pItem->ManualCooldownDelay = 0.f;
+		pItem->CooldownRate = 99999.f;
+	}
+	else {
+		pItem->ManualCooldownDelay = 1.f;
+		pItem->CooldownRate = 1.f;
+	}
+
+	if (pItem->IsA(SDK::AGrapplingHookGun::StaticClass())) {
+		SDK::AGrapplingHookGun* pGrapplingGun = static_cast<SDK::AGrapplingHookGun*>(pItem);
 		if (!IsValidObjectPtr(pGrapplingGun))
 			return;
 
@@ -129,33 +158,24 @@ void WeaponModifications::Run() {
 		pGrapplingGun->MaxSpeed = 22.50f * fGrappleMaxSpeed;
 		pGrapplingGun->MaxDistance = 9999999.f;
 
-		CG::UCoolDownItemAggregator* pCoolDown = pGrapplingGun->CoolDownAggregator;
+		SDK::UCoolDownItemAggregator* pCoolDown = pGrapplingGun->CoolDownAggregator;
 		if (IsValidObjectPtr(pCoolDown))
 			pCoolDown->CooldownRemaining = 0.f;
 
 		return;
 	}
-	case FNames::WPN_SawedOffShotgun_C:
-		CG::AWPN_SawedOffShotgun_C* pShotgun = static_cast<CG::AWPN_SawedOffShotgun_C*>(pItem);
+	
+	if (pItem->IsA(SDK::ASawedOffShotgun::StaticClass())) {
+		SDK::ASawedOffShotgun* pShotgun = static_cast<SDK::ASawedOffShotgun*>(pItem);
 		if (IsValidObjectPtr(pShotgun)) {
 			pShotgun->ShotgunJumpEnabled = true;
 		}
-		
-		break;
 	}
 
-	if (bNoOverheating) {
-		pItem->ManualCooldownDelay = 0.f;
-		pItem->CooldownRate = 99999.f;
-	}
-	else {
-		pItem->ManualCooldownDelay = 1.f;
-	}
-
-	if (!pItem->IsA(CG::AAmmoDrivenWeapon::StaticClass()))
+	if (!pItem->IsA(SDK::AAmmoDrivenWeapon::StaticClass()))
 		return;	
 
-	CG::AAmmoDrivenWeapon* pWeapon = static_cast<CG::AAmmoDrivenWeapon*>(pItem);
+	SDK::AAmmoDrivenWeapon* pWeapon = static_cast<SDK::AAmmoDrivenWeapon*>(pItem);
 	if (!IsValidObjectPtr(pWeapon))
 		return;
 
@@ -211,5 +231,5 @@ void WeaponModifications::LoadConfig()
 
 	entry = Cheat::config->GetEntryByName("GRAPPLE_MAX_SPEED");
 	if (entry.Name == "GRAPPLE_MAX_SPEED")
-		fGrappleMaxSpeed = std::stoi(entry.Value);
+		fGrappleMaxSpeed = std::stof(entry.Value);
 }

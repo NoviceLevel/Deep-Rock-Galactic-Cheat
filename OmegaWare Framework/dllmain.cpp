@@ -18,11 +18,12 @@ namespace Cheat
 
 #if FRAMEWORK_UNREAL // If the framework is Unreal, wait for GWorld to initialize
 		// Dumper-7 SDK doesn't require InitSdk() call
-		
-		if (!SDK::UWorld::GWorld)
-			Utils::LogError(Utils::GetLocation(CurrentLoc), "Waiting for GWorld to initalize");
+		// Wait for UWorld to be available
+		SDK::UWorld* pWorld = SDK::UWorld::GetWorld();
+		if (!pWorld)
+			Utils::LogError(Utils::GetLocation(CurrentLoc), "Waiting for World to initialize");
 
-		while (!SDK::UWorld::GWorld)
+		while (!SDK::UWorld::GetWorld())
 			continue;
 #endif
 
@@ -49,7 +50,6 @@ namespace Cheat
 		// https://stackoverflow.com/questions/16711697/is-there-any-use-for-unique-ptr-with-array
 		// Features
 		//Features.push_back(std::make_unique<ExampleFeature>());
-		Features.push_back(std::make_unique<Misc>());
 		Features.push_back(std::make_unique<PlayerModifications>());
 		Features.push_back(std::make_unique<WeaponModifications>());
 		Features.push_back(std::make_unique<Aimbot>());

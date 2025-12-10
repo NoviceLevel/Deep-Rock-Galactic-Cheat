@@ -66,6 +66,7 @@ static_assert(!(FRAMEWORK_RENDER_DYNAMIC || FRAMEWORK_RENDER_D3D12), "This does 
 #include <functional>
 #include <algorithm>
 #include <span>
+#include <unordered_set>
 #include <eh.h> // I dont remember what this was for, but I think it was for a scuffed try catch block to stop crashes on memory access violations
 
 #ifndef FRAMEWORK_INJECTOR
@@ -180,7 +181,6 @@ namespace Cheat
 
 #include "Features/Feature.h" // Include the Feature.h file that contains the Feature class that is used to create the features for the framework
 //#include "Features/ExampleFeature/ExampleFeature.h"
-#include "Features/Misc/Misc.h"
 #include "Features/PlayerModifications/PlayerModifications.h"
 #include "Features/WeaponModifications/WeaponModifications.h"
 #include "Features/Aimbot/Aimbot.h"

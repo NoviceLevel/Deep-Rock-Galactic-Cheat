@@ -15,6 +15,11 @@
 
 namespace UC
 {	
+	// char8_t typedef for compatibility when /Zc:char8_t- is used
+	#ifndef __cpp_char8_t
+	typedef unsigned char char8_t;
+	#endif
+
 	typedef int8_t  int8;
 	typedef int16_t int16;
 	typedef int32_t int32;
@@ -360,9 +365,11 @@ namespace UC
 	public:
 		inline std::string ToString() const
 		{
-			if (*this)
+			if (*this && NumElements > 0)
 			{
-				return UtfN::Utf16StringToUtf8String<std::string>(Data, NumElements  - 1); // Exclude null-terminator
+				// Use the wstring overload
+				std::wstring wstr(Data, NumElements - 1);
+				return UtfN::Utf16StringToUtf8String<std::string>(wstr);
 			}
 
 			return "";

@@ -261,7 +261,7 @@ struct ImVec2
     constexpr ImVec2()                      : x(0.0f), y(0.0f) { }
     constexpr ImVec2(float _x, float _y)    : x(_x), y(_y) { }
 #if FRAMEWORK_UNREAL
-    ImVec2(CG::FVector2D in)      : x(in.X), y(in.Y) {}
+    ImVec2(SDK::FVector2D in)      : x(in.X), y(in.Y) {}
 #endif
     float& operator[] (size_t idx)          { IM_ASSERT(idx == 0 || idx == 1); return ((float*)(void*)(char*)this)[idx]; } // We very rarely use this [] operator, so the assert overhead is fine.
     float  operator[] (size_t idx) const    { IM_ASSERT(idx == 0 || idx == 1); return ((const float*)(const void*)(const char*)this)[idx]; }

@@ -11,6 +11,9 @@ inline ImFont* TahomaFontESP; // A font with extra spacing for ESP
 inline ImFont* TahomaFontPolish;
 inline ImFont* TahomaFontPolishESP;
 
+inline ImFont* ChineseFont;
+inline ImFont* ChineseFontESP;
+
 inline void SetupStyle()
 {
 	ImGuiStyle& style = ImGui::GetStyle();
@@ -109,9 +112,26 @@ inline void ImportFonts()
 	ImFontConfig Config;
 	Config.GlyphExtraSpacing.x = 1.f;
 
-	TahomaFont = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Tahoma.ttf", 14.0f, NULL, io.Fonts->GetGlyphRangesDefault());
-	TahomaFontESP = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Tahoma.ttf", 14.0f, &Config, io.Fonts->GetGlyphRangesDefault());
+	// 为默认字体添加中文支持，这样语言选择器中的"简体中文"也能正常显示
+	ImFontConfig fontConfig;
+	fontConfig.MergeMode = false;
+	TahomaFont = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Tahoma.ttf", 14.0f, &fontConfig, io.Fonts->GetGlyphRangesDefault());
+	
+	// 合并中文字符到默认字体
+	fontConfig.MergeMode = true;
+	io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\msyh.ttc", 14.0f, &fontConfig, ChineseRanges);
 
+	// ESP字体也添加中文支持
+	Config.MergeMode = false;
+	TahomaFontESP = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Tahoma.ttf", 14.0f, &Config, io.Fonts->GetGlyphRangesDefault());
+	Config.MergeMode = true;
+	io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\msyh.ttc", 14.0f, &Config, ChineseRanges);
+
+	// 波兰语字体
 	TahomaFontPolish = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Tahoma.ttf", 14.0f, NULL, PolishRanges);
 	TahomaFontPolishESP = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\Tahoma.ttf", 14.0f, &Config, PolishRanges);
+
+	// 中文字体 - 使用微软雅黑
+	ChineseFont = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\msyh.ttc", 14.0f, NULL, ChineseRanges);
+	ChineseFontESP = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\msyh.ttc", 14.0f, &Config, ChineseRanges);
 }

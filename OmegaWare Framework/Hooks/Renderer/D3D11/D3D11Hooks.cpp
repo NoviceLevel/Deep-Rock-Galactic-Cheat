@@ -102,9 +102,24 @@ static void RenderImGui(IDXGISwapChain* pSwapChain) {
 	if (!ImGui::GetIO().BackendRendererUserData) {
 
 		if (!SUCCEEDED(pSwapChain->GetDevice(IID_PPV_ARGS(&g_pDevice)))) {
-			Utils::LogError(Utils::GetLocation(CurrentLoc), "Couldnt get device?!???");
+			// Device not ready yet, log with counter to track initialization progress
+			static int failCount = 0;
+			failCount++;
+			
+			// Log every 100 attempts to avoid spam but still show progress
+			if (failCount % 100 == 1) {
+				Utils::LogError(Utils::GetLocation(CurrentLoc), "Couldn't get D3D11 device (attempt " + std::to_string(failCount) + ")");
+			}
+			
+			// If it fails too many times, there might be a real problem
+			if (failCount > 1000) {
+				Utils::LogError(Utils::GetLocation(CurrentLoc), "D3D11 device initialization failed after 1000+ attempts - possible issue!");
+			}
 			return;
 		}
+		
+		// Device acquired successfully, log it
+		Utils::LogDebug(Utils::GetLocation(CurrentLoc), "D3D11 device acquired successfully");
 
 		g_pDevice->GetImmediateContext(&g_pDeviceContext);
 		ImGui_ImplDX11_Init(g_pDevice, g_pDeviceContext);

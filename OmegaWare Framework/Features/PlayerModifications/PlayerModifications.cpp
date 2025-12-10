@@ -34,6 +34,17 @@ bool PlayerModifications::Setup()
 	if (!Cheat::localization->AddToLocale("POL", PolishData))
 		return false;
 
+	std::vector<LocaleData> ChineseData = {
+		{ HASH("GODMODE"), "上帝模式" },
+		{ HASH("RUNNING_SPEED"), "奔跑速度" },
+		{ HASH("FLY_HACK"), "喷气背包" },
+		{ HASH("FLY_FORCE"), "推力" },
+		{ HASH("NAME_CHANGER"), "名称修改" },
+		{ HASH("NAME_CHANGER_SET"), "设置名称" }
+	};
+	if (!Cheat::localization->AddToLocale("CHN", ChineseData))
+		return false;
+
 	Cheat::localization->UpdateLocale();
 
 	Utils::LogDebug(Utils::GetLocation(CurrentLoc), "Feature: PlayerModifications Initialized");
@@ -48,16 +59,16 @@ void PlayerModifications::Destroy() {
 
 	Unreal* pUnreal = Cheat::unreal.get();
  
-	CG::ABP_PlayerCharacter_C* pDRGPlayer = static_cast<CG::ABP_PlayerCharacter_C*>(pUnreal->GetAcknowledgedPawn());
+	SDK::ABP_PlayerCharacter_C* pDRGPlayer = static_cast<SDK::ABP_PlayerCharacter_C*>(pUnreal->GetAcknowledgedPawn());
 	if (!IsValidObjectPtr(pDRGPlayer))
 		return;
 
-	CG::ABP_PlayerController_C* pPlayerController = static_cast<CG::ABP_PlayerController_C*>(pUnreal->GetPlayerController());
+	SDK::ABP_PlayerController_C* pPlayerController = static_cast<SDK::ABP_PlayerController_C*>(pUnreal->GetPlayerController());
 	if (!IsValidObjectPtr(pPlayerController))
 		return;
 
 	if (wsOriginalName.size())
-		pPlayerController->SetName(CG::FString(wsOriginalName.c_str()));
+		pPlayerController->SetName(SDK::FString(wsOriginalName.c_str()));
 
 	if (flDefaultRunningSpeed > 0.f) 
 		pDRGPlayer->RunningSpeed = flDefaultRunningSpeed;
@@ -80,16 +91,16 @@ void PlayerModifications::PopulateMenu()
 		PlayerModifications->AddElement(new SliderFloat(Cheat::localization->Get("FLY_FORCE").c_str(), &flFlyForce, 100.f, 500.f));
 	PlayerModifications->AddElement(new InputText(Cheat::localization->Get("NAME_CHANGER").c_str(), szNameBuffer, sizeNameBuffer));
 	PlayerModifications->AddElement(new Button(Cheat::localization->Get("NAME_CHANGER_SET").c_str(), [this]() {
-		CG::ABP_PlayerController_C* pPlayerController = static_cast<CG::ABP_PlayerController_C*>(Cheat::unreal->GetPlayerController());
+		SDK::ABP_PlayerController_C* pPlayerController = static_cast<SDK::ABP_PlayerController_C*>(Cheat::unreal->GetPlayerController());
 		if (!IsValidObjectPtr(pPlayerController))
 			return;
 
 		if (!strlen(szNameBuffer)) {
-			pPlayerController->SetName(CG::FString(wsOriginalName.c_str()));
+			pPlayerController->SetName(SDK::FString(wsOriginalName.c_str()));
 		}
 		else {
 			std::wstring wszName(szNameBuffer, szNameBuffer + sizeNameBuffer);
-			pPlayerController->SetName(CG::FString(wszName.c_str()));
+			pPlayerController->SetName(SDK::FString(wszName.c_str()));
 		}
 	}));
 
@@ -106,34 +117,41 @@ void PlayerModifications::Run() {
 	if (!IsValidObjectPtr(pUnreal))
 		return;
 
-	CG::AGameStateBase* pGameState = pUnreal->GetGameStateBase();
+	SDK::AGameStateBase* pGameState = pUnreal->GetGameStateBase();
 	if (!IsValidObjectPtr(pGameState))
 		return;
 
-	CG::ABP_PlayerCharacter_C* pDRGPlayer = static_cast<CG::ABP_PlayerCharacter_C*>(pUnreal->GetAcknowledgedPawn());
+	SDK::AFSDGameState* pFSDGameState = static_cast<SDK::AFSDGameState*>(pGameState);
+	if (IsValidObjectPtr(pFSDGameState) && pFSDGameState->IsOnSpaceRig)
+		return;
+
+	SDK::ABP_PlayerCharacter_C* pDRGPlayer = static_cast<SDK::ABP_PlayerCharacter_C*>(pUnreal->GetAcknowledgedPawn());
 	if (!IsValidObjectPtr(pDRGPlayer))
 		return;
 
-	CG::ABP_PlayerController_C* pPlayerController = static_cast<CG::ABP_PlayerController_C*>(pUnreal->GetPlayerController());
+	SDK::ABP_PlayerController_C* pPlayerController = static_cast<SDK::ABP_PlayerController_C*>(pUnreal->GetPlayerController());
 	if (!IsValidObjectPtr(pPlayerController))
 		return;
 
-	CG::APlayerState* pPlayerState = pPlayerController->PlayerState;
+	SDK::APlayerState* pPlayerState = pPlayerController->PlayerState;
 	if (!IsValidObjectPtr(pPlayerState))
+		return;
+	
+	if (!pDRGPlayer->CharacterMovement || !pDRGPlayer->HealthComponent)
 		return;
 
 	if (!wsOriginalName.size())
-		wsOriginalName = pPlayerState->GetPlayerName().ToStringW();
+		wsOriginalName = pPlayerState->GetPlayerName().ToWString();
 
 	if (pDRGPlayer->RunningSpeed != flLastRunningSpeed)
 		flDefaultRunningSpeed = pDRGPlayer->RunningSpeed;
 
 	pDRGPlayer->RunningSpeed = flLastRunningSpeed = flDefaultRunningSpeed * flRunningSpeed;
 
-	if (pDRGPlayer->IsJumpPressed() && !pDRGPlayer->CanJump() && bFlyHack)
-		pDRGPlayer->Client_AddImpulse(CG::FVector_NetQuantizeNormal(CG::FVector(0.f, 0.f, 1.f)), flFlyForce);
+	if (bFlyHack && pDRGPlayer->IsJumpPressed() && !pDRGPlayer->CanJump())
+		pDRGPlayer->Client_AddImpulse(SDK::FVector_NetQuantizeNormal(SDK::FVector(0.f, 0.f, 1.f)), flFlyForce);
 
-	CG::UPlayerHealthComponent* pHealthComponent = pDRGPlayer->HealthComponent;
+	SDK::UPlayerHealthComponent* pHealthComponent = pDRGPlayer->HealthComponent;
 	if (!IsValidObjectPtr(pHealthComponent))
 		return;
 
@@ -142,7 +160,7 @@ void PlayerModifications::Run() {
 		pHealthComponent->HealArmor(100.f);
 
 		if (pDRGPlayer->IsDown())
-			pDRGPlayer->InstantRevive(pDRGPlayer, CG::EInputKeys::Use);
+			pDRGPlayer->InstantRevive(pDRGPlayer, SDK::EInputKeys::Use);
 	}
 }
 
@@ -161,7 +179,7 @@ void PlayerModifications::LoadConfig()
 
 	entry = Cheat::config->GetEntryByName("RUNNING_SPEED");
 	if (entry.Name == "RUNNING_SPEED")
-		flRunningSpeed = std::stoi(entry.Value);
+		flRunningSpeed = std::stof(entry.Value);
 
 	entry = Cheat::config->GetEntryByName("FLY_HACK");
 	if (entry.Name == "FLY_HACK")
@@ -169,5 +187,5 @@ void PlayerModifications::LoadConfig()
 
 	entry = Cheat::config->GetEntryByName("FLY_FORCE");
 	if (entry.Name == "FLY_FORCE")
-		flFlyForce = std::stoi(entry.Value);
+		flFlyForce = std::stof(entry.Value);
 }

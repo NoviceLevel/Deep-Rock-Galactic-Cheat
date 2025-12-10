@@ -3,12 +3,14 @@
 #include "Locales/English.h"
 #include "Locales/German.h"
 #include "Locales/Polish.h"
+#include "Locales/Chinese.h"
 
 Localization::Localization()
 {
 	LoadLocale(English);
 	LoadLocale(German);
 	LoadLocale(Polish);
+	LoadLocale(Chinese);
 
 	if (!SetLocale("ENG"))
 	{

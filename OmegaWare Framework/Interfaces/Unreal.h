@@ -42,6 +42,12 @@ namespace FNames
 
 	inline void Initialize()
 	{
+		// Dumper-7 doesn't require GNames initialization
+		// FName::AppendString is used instead
+		Utils::LogDebug(Utils::GetLocation(CurrentLoc), "FNames initialization skipped for Dumper-7");
+		return;
+		
+		/* CheatGear GNames initialization code - not needed for Dumper-7
 		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "GNames: 0x" << SDK::FName::GNames).str());
 		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "GNames Count: " << SDK::FName::GNames->Count()).str());
 		
@@ -112,6 +118,7 @@ namespace FNames
 		}
 
 		Utils::LogDebug(Utils::GetLocation(CurrentLoc), (std::stringstream() << "Resolved GNames Count: " << iGNameSize).str());
+		*/
 	};
 }
 #undef CREATE_ENUM
@@ -120,8 +127,14 @@ namespace FNames
 static SDK::UFont* pFont;
 static DWORD dwOldProtect;
 
-typedef void(__thiscall* PostRender) (SDK::UObject* pViewportClient, SDK::UCanvas* pCanvas);
+// PostRender hook - Dumper-7 compatible
+typedef void(__thiscall* PostRender) (void* thisptr, SDK::UCanvas* pCanvas);
 static PostRender oPostRender;
+static void** pVTable = nullptr;
+
+// UE4.27 uses index 0x63 for PostRender
+// Deep Rock Galactic uses UE4.27
+constexpr int POST_RENDER_INDEX = 0x63;
 
 class Unreal
 {
@@ -136,23 +149,23 @@ public:
 		if (!IsValidObjectPtr(pViewportClient))
 			return;
 
-		void** VFTable = pViewportClient->VfTable;
-		VirtualProtect(&VFTable[POST_RENDER_INDEX], 8, PAGE_EXECUTE_READWRITE, &dwOldProtect);
-		oPostRender = reinterpret_cast<PostRender>(VFTable[POST_RENDER_INDEX]);
-		VFTable[POST_RENDER_INDEX] = &hkPostRender;
-		VirtualProtect(&VFTable[POST_RENDER_INDEX], 8, dwOldProtect, &dwOldProtect);
+		// Get VTable from ViewportClient (Dumper-7 compatible)
+		pVTable = *reinterpret_cast<void***>(pViewportClient);
+		
+		VirtualProtect(&pVTable[POST_RENDER_INDEX], sizeof(void*), PAGE_EXECUTE_READWRITE, &dwOldProtect);
+		oPostRender = reinterpret_cast<PostRender>(pVTable[POST_RENDER_INDEX]);
+		pVTable[POST_RENDER_INDEX] = &hkPostRender;
+		VirtualProtect(&pVTable[POST_RENDER_INDEX], sizeof(void*), dwOldProtect, &dwOldProtect);
 	}
 
 	static void RestorePostRender()
 	{
-		SDK::UGameViewportClient* pViewportClient = GetViewportClient();
-		if (!IsValidObjectPtr(pViewportClient))
+		if (!pVTable || !oPostRender)
 			return;
 
-		void** VFTable = pViewportClient->VfTable;
-		VirtualProtect(&VFTable[POST_RENDER_INDEX], 8, PAGE_EXECUTE_READWRITE, &dwOldProtect);
-		VFTable[POST_RENDER_INDEX] = oPostRender;
-		VirtualProtect(&VFTable[POST_RENDER_INDEX], 8, dwOldProtect, &dwOldProtect);
+		VirtualProtect(&pVTable[POST_RENDER_INDEX], sizeof(void*), PAGE_EXECUTE_READWRITE, &dwOldProtect);
+		pVTable[POST_RENDER_INDEX] = oPostRender;
+		VirtualProtect(&pVTable[POST_RENDER_INDEX], sizeof(void*), dwOldProtect, &dwOldProtect);
 	}
 
 	std::vector<SDK::AActor*> Actors;
@@ -169,7 +182,7 @@ public:
 	inline bool IsAFast(SDK::UClass* in, FNames::EFNames iLookupIndex)
 	{
 		int32_t iComparisonIndex = FNames::vecClassLookups[iLookupIndex].ComparisonIndex;
-		for (SDK::UStruct* pStruct = static_cast<SDK::UStruct*>(in); IsValidObjectPtr(pStruct); pStruct = pStruct->SuperField) {
+		for (SDK::UStruct* pStruct = static_cast<SDK::UStruct*>(in); IsValidObjectPtr(pStruct); pStruct = pStruct->Super) {
 			if (pStruct->Name.ComparisonIndex == iComparisonIndex)
 				return true;
 		}
@@ -180,7 +193,7 @@ public:
 	// Kinda like UObject->IsA, but safer and faster as we are already storing fname comparison indexes!!!
 	inline bool IsAFast(SDK::UClass* in, int iComparisonIndex)
 	{
-		for (SDK::UStruct* pStruct = static_cast<SDK::UStruct*>(in); IsValidObjectPtr(pStruct); pStruct = pStruct->SuperField) {
+		for (SDK::UStruct* pStruct = static_cast<SDK::UStruct*>(in); IsValidObjectPtr(pStruct); pStruct = pStruct->Super) {
 			if (pStruct->Name.ComparisonIndex == iComparisonIndex)
 				return true;
 		}
@@ -193,12 +206,14 @@ public:
 		std::vector<SDK::AActor*> lActors{};
 		std::vector<FNames::ActorInfo_t> lActorList{};
 		std::vector<float> AllDistances{};
+		std::unordered_set<SDK::AActor*> seenActors{};
 
 		static std::unordered_map<uint32_t, FNames::EFNames> umClassLookupCache{};
 
-		if (SDK::UWorld::GWorld == nullptr) {
+		SDK::UWorld* pWorld = SDK::UWorld::GetWorld();
+		if (!pWorld) {
 			ActorLock.lock();
-			umClassLookupCache.clear(); // This is probably not needed due to fname comparison indexes not changing
+			umClassLookupCache.clear();
 			Actors.clear();
 			ActorList.clear();
 			ActorLock.unlock();
@@ -208,17 +223,7 @@ public:
 		SDK::AFSDGameState* pGameState = reinterpret_cast<SDK::AFSDGameState*>(GetGameStateBase());
 		if (!IsValidObjectPtr(pGameState) || pGameState->IsOnSpaceRig) {
 			ActorLock.lock();
-			umClassLookupCache.clear(); // This is probably not needed due to fname comparison indexes not changing
-			Actors.clear();
-			ActorList.clear();
-			ActorLock.unlock();
-			return;
-		}
-
-		FNames::EFNames iMatchState = FNames::GetLookupIndex(pGameState->MatchState.ComparisonIndex);
-		if (iMatchState != FNames::InProgress) {
-			ActorLock.lock();
-			umClassLookupCache.clear(); // This is probably not needed due to fname comparison indexes not changing
+			umClassLookupCache.clear();
 			Actors.clear();
 			ActorList.clear();
 			ActorLock.unlock();
@@ -234,35 +239,25 @@ public:
 			return;
 		}
 
-
 		SDK::FVector vecLocation = pAcknowledgedPawn->K2_GetActorLocation();
 
-		for (int i = 0; i < SDK::UWorld::GWorld->Levels.Count(); i++)
+		for (int i = 0; i < pWorld->Levels.Num(); i++)
 		{
-			SDK::ULevel* Level = SDK::UWorld::GWorld->Levels[i];
+			SDK::ULevel* Level = pWorld->Levels[i];
 
 			if (!Level)
 				continue;
 
-			if (!Level->NearActors.Data() || !Level->NearActors.Count())
+			if (!Level->Actors.IsValid() || Level->Actors.Num() == 0)
 				continue;
 
-			for (int j = 0; j < Level->NearActors.Count(); j++)
+			for (int j = 0; j < Level->Actors.Num(); j++)
 			{
-				SDK::AActor* Actor = Level->NearActors[j];
+				SDK::AActor* Actor = Level->Actors[j];
 				if (!Actor)
 					continue;
 
-				bool bFailed = false;
-				for (SDK::AActor* pOtherActor : lActors) {
-					if (pOtherActor != Actor)
-						continue;
-
-					bFailed = true;
-					break;
-				}
-
-				if (!bFailed)
+				if (seenActors.insert(Actor).second)
 					lActors.push_back(Actor);
 			}
 		}
@@ -276,7 +271,7 @@ public:
 			FNames::ActorInfo_t stActorInfo{
 				pActor,
 				FNames::Invalid,
-				vecLocation.Distance(pActor->K2_GetActorLocation())
+				vecLocation.GetDistanceTo(pActor->K2_GetActorLocation())
 			};
 
 
@@ -284,7 +279,7 @@ public:
 				stActorInfo.iLookupIndex = itr->second;
 			}
 			else {
-				for (SDK::UStruct* pStruct = static_cast<SDK::UStruct*>(pActor->Class); IsValidObjectPtr(pStruct); pStruct = pStruct->SuperField) {
+				for (SDK::UStruct* pStruct = static_cast<SDK::UStruct*>(pActor->Class); IsValidObjectPtr(pStruct); pStruct = pStruct->Super) {
 					for (FNames::ClassLookupEntry_t stEntry : FNames::vecClassLookups) {
 						if (pStruct->Name.ComparisonIndex == stEntry.ComparisonIndex) {
 							stActorInfo.iLookupIndex = stEntry.iLookupIndex;
@@ -364,10 +359,11 @@ public:
 	// These functions are to make getting pointers to important classes and objects easier and cleaner
 	static SDK::AGameStateBase* GetGameStateBase()
 	{
-		if (!SDK::UWorld::GWorld)
+		SDK::UWorld* pWorld = SDK::UWorld::GetWorld();
+		if (!pWorld)
 			return nullptr;
 
-		SDK::AGameStateBase* pGameState = SDK::UWorld::GWorld->GameState;
+		SDK::AGameStateBase* pGameState = pWorld->GameState;
 		if (!IsValidObjectPtr(pGameState))
 			return nullptr;
 
@@ -375,10 +371,11 @@ public:
 	}
 	static SDK::UGameInstance* GetGameInstance()
 	{
-		if (!SDK::UWorld::GWorld)
+		SDK::UWorld* pWorld = SDK::UWorld::GetWorld();
+		if (!pWorld)
 			return nullptr;
 
-		SDK::UGameInstance* pGameInstance = SDK::UWorld::GWorld->OwningGameInstance;
+		SDK::UGameInstance* pGameInstance = pWorld->OwningGameInstance;
 		if (!IsValidObjectPtr(pGameInstance))
 			return nullptr;
 
@@ -525,11 +522,11 @@ public:
 		return SortedActors;
 	}
 
-	static void hkPostRender(SDK::UObject* pViewportClient, SDK::UCanvas* pCanvas)
+	static void hkPostRender(void* thisptr, SDK::UCanvas* pCanvas)
 	{
 		SDK::ULocalPlayer* pLocalPlayer = GetLocalPlayer();
 		if (!IsValidObjectPtr(pLocalPlayer))
-			return oPostRender(pViewportClient, pCanvas);
+			return oPostRender(thisptr, pCanvas);
 
 		SDK::FLinearColor Cyan = { 0.f, 1.f, 1.f, 1.f };
 		SDK::FLinearColor Black = { 0.f, 0.f, 0.f, 1.f };
@@ -540,7 +537,7 @@ public:
 
 		//pCanvas->K2_DrawLine({ 0.f, 0.f }, { 1024.f, 640.f }, 1.f, Cyan);
 
-		oPostRender(pViewportClient, pCanvas);
+		oPostRender(thisptr, pCanvas);
 	}
 };
 

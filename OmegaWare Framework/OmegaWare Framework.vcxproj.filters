@@ -9,24 +9,13 @@
     <ClCompile Include="GUI\GUI.cpp" />
     <ClCompile Include="Config\Config.cpp" />
     <ClCompile Include="Localization\Localization.cpp" />
-    <ClCompile Include="SDK\BasicTypes_Package.cpp" />
-    <ClCompile Include="SDK\CoreUObject_Package.cpp" />
-    <ClCompile Include="SDK\Engine_Package.cpp" />
-    <ClCompile Include="SDK\FSD_Package.cpp" />
     <ClCompile Include="Features\WeaponModifications\WeaponModifications.cpp" />
     <ClCompile Include="Features\PlayerModifications\PlayerModifications.cpp" />
-    <ClCompile Include="Features\Misc\Misc.cpp" />
-    <ClCompile Include="SDK\WPN_GrapplingGun_Package.cpp" />
-    <ClCompile Include="SDK\BP_PlayerCharacter_Package.cpp" />
-    <ClCompile Include="SDK\WPN_DoubleDrills_Package.cpp" />
-    <ClCompile Include="SDK\WPN_Pickaxe_Package.cpp" />
     <ClCompile Include="Features\Aimbot\Aimbot.cpp" />
     <ClCompile Include="Features\ESP\ESP.cpp" />
     <ClCompile Include="Hooks\WndProc\WndProcHooks.cpp" />
     <ClCompile Include="Hooks\Renderer\D3D11\D3D11Hooks.cpp" />
     <ClCompile Include="Hooks\Renderer\D3D12\D3D12Hooks.cpp" />
-    <ClCompile Include="SDK\BP_DropPod_Escape_Base_Package.cpp" />
-    <ClCompile Include="SDK\BP_DropPod_Base_Package.cpp" />
     <ClCompile Include="Memory\Windows\WindowsMemory.cpp" />
     <ClCompile Include="Memory\Memory.cpp" />
     <ClCompile Include="Libs\ImGui\imgui.cpp" />
@@ -38,6 +27,8 @@
     <ClCompile Include="Libs\ImGui\imgui_tables.cpp" />
     <ClCompile Include="Libs\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="Hooks\Renderer\RendererHooks.cpp" />
+    <ClCompile Include="SDK\SDK\Basic.cpp" />
+    <ClCompile Include="SDK\SDK\CoreUObject_functions.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Utils\Console\Console.h" />
@@ -59,7 +50,6 @@
     <ClInclude Include="SDK.h" />
     <ClInclude Include="Features\WeaponModifications\WeaponModifications.h" />
     <ClInclude Include="Features\PlayerModifications\PlayerModifications.h" />
-    <ClInclude Include="Features\Misc\Misc.h" />
     <ClInclude Include="Features\Aimbot\Aimbot.h" />
     <ClInclude Include="Localization\Locales\German.h" />
     <ClInclude Include="Features\ESP\ESP.h" />
@@ -82,6 +72,7 @@
     <ClInclude Include="Libs\ImGui\imstb_truetype.h" />
     <ClInclude Include="Libs\MinHook\include\MinHook.h" />
     <ClInclude Include="Libs\StringToBytes\stb.hh" />
+    <ClInclude Include="SDK\SDK\Engine_classes.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
